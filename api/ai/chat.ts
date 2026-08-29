@@ -1,5 +1,37 @@
-import type { IncomingMessage, ServerResponse } from 'http';
+import 'dotenv/config';
 import { processAIChat } from '../../src/utils/aiService';
+
+// Helper to extract JSON body from Vercel Serverless Function request
+async function getRequestBody(req: any): Promise<any> {
+  if (req.body) {
+    if (typeof req.body === 'string') {
+      try {
+        return JSON.parse(req.body);
+      } catch {
+        return {};
+      }
+    }
+    return req.body;
+  }
+
+  // Handle stream if req.body is not populated
+  return new Promise((resolve) => {
+    let raw = '';
+    req.on('data', (chunk: any) => {
+      raw += chunk;
+    });
+    req.on('end', () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : {});
+      } catch {
+        resolve({});
+      }
+    });
+    req.on('error', () => {
+      resolve({});
+    });
+  });
+}
 
 // Vercel Serverless Function Handler for /api/ai/chat
 export default async function handler(req: any, res: any) {
@@ -23,24 +55,16 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    let body = req.body;
-    if (typeof body === 'string') {
-      try {
-        body = JSON.parse(body);
-      } catch (e) {
-        // body remains string or empty
-      }
-    }
-
+    const body = await getRequestBody(req);
     const { message, history = [], contextData = {} } = body || {};
 
-    if (!message || typeof message !== 'string') {
+    if (!message || typeof message !== 'string' || !message.trim()) {
       res.status(400).json({ error: 'Pesan tidak boleh kosong.' });
       return;
     }
 
     const reply = await processAIChat({
-      message,
+      message: message.trim(),
       history,
       contextData,
     });
