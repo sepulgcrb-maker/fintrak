@@ -268,7 +268,7 @@ export const exportFinancialReportPDF = ({
 
   const txRows = filteredTx.map((t) => [
     t.transactionDate,
-    t.title,
+    t.description,
     t.category,
     getAccountName(t.accountId),
     t.type === 'income' ? 'Masuk' : 'Keluar',

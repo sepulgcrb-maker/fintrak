@@ -162,8 +162,18 @@ Bagaimana saya dapat membantu Anda hari ini? Anda bisa meminta **analisis lapora
         }),
       });
 
-      const data = await res.json();
-      const aiReply = data.reply || 'Maaf, FinAI tidak dapat memproses jawaban saat ini. Silakan coba kembali.';
+      let aiReply = '';
+      if (res.ok) {
+        const data = await res.json();
+        aiReply = data.reply || 'Maaf, FinAI tidak dapat memproses jawaban saat ini. Silakan coba kembali.';
+      } else {
+        try {
+          const errData = await res.json();
+          aiReply = errData.error || `Terjadi kendala pada server (Kode: ${res.status}). Silakan coba sesaat lagi.`;
+        } catch {
+          aiReply = `Terjadi kendala pada server (Kode: ${res.status}). Silakan coba sesaat lagi.`;
+        }
+      }
 
       // Determine smart interactive actions
       const lower = text.toLowerCase();

@@ -234,7 +234,9 @@ export const ReportsView: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             {pieData.map((entry, index) => {
-              const catBudget = categoryBudgets[entry.name];
+              const catBudget = Array.isArray(categoryBudgets) 
+                ? categoryBudgets.find(b => b.category === entry.name)
+                : undefined;
               const isOver = catBudget?.enabled && entry.value > catBudget.monthlyThreshold;
               return (
                 <div key={entry.name} className="flex flex-col p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-xs">
