@@ -13,13 +13,14 @@ import {
   RotateCcw,
   CheckCircle2,
   Sliders,
-  BellRing
+  BellRing,
+  Wallet
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryBudgetModal } from './CategoryBudgetModal';
 
 export const ProfileView: React.FC = () => {
-  const { user, updateUserProfile, toggleDarkMode, toggleHideBalance, categoryAlerts } = useApp();
+  const { user, updateUserProfile, toggleDarkMode, toggleHideBalance, categoryAlerts, setActiveTab } = useApp();
   const [name, setName] = useState(user.name);
   const [businessName, setBusinessName] = useState(user.businessName || '');
   const [phone, setPhone] = useState(user.phone || '');
@@ -170,6 +171,20 @@ export const ProfileView: React.FC = () => {
             className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
           >
             {user.hideBalance ? <EyeOff className="w-4 h-4 text-emerald-500" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <p className="font-semibold text-slate-900 dark:text-white">Pengaturan Rekening & Dompet</p>
+            <p className="text-[11px] text-slate-400">Atur kartu bank, e-wallet, tema warna, dan koreksi saldo</p>
+          </div>
+          <button
+            onClick={() => setActiveTab('accounts')}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-400 font-semibold cursor-pointer"
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Kelola</span>
           </button>
         </div>
 

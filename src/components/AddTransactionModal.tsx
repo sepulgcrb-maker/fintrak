@@ -27,8 +27,9 @@ export const AddTransactionModal: React.FC = () => {
       setType(addModalDefaults.type);
       setStatus(addModalDefaults.status);
       setCategory(addModalDefaults.type === 'income' ? 'Gaji' : 'Operasional');
-      if (accounts.length > 0 && !accountId) {
-        setAccountId(accounts[0].id);
+      const primaryAcc = accounts.find(a => a.isPrimary) || accounts[0];
+      if (primaryAcc) {
+        setAccountId(primaryAcc.id);
       }
     }
   }, [isAddModalOpen, addModalDefaults, accounts]);

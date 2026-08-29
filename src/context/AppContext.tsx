@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Account, Transaction, AppNotification, UserProfile, ActiveTab, CategoryBudget, CategoryBudgetAlert, CategoryType } from '../types';
+import { Account, Transaction, AppNotification, UserProfile, ActiveTab, CategoryBudget, CategoryBudgetAlert, CategoryType, SavingsGoal } from '../types';
 
 interface AppContextType {
   user: UserProfile;
@@ -8,8 +8,13 @@ interface AppContextType {
   notifications: AppNotification[];
   categoryBudgets: CategoryBudget[];
   categoryAlerts: CategoryBudgetAlert[];
+  savingsGoals: SavingsGoal[];
   setCategoryBudget: (category: CategoryType, monthlyThreshold: number, enabled?: boolean) => void;
   toggleCategoryBudget: (category: CategoryType) => void;
+  addSavingsGoal: (goal: Omit<SavingsGoal, 'id'>) => void;
+  updateSavingsGoal: (id: string, updates: Partial<SavingsGoal>) => void;
+  deleteSavingsGoal: (id: string) => void;
+  addFundsToGoal: (goalId: string, amount: number, fromAccountId?: string) => void;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   isAddModalOpen: boolean;
@@ -29,6 +34,8 @@ interface AppContextType {
   
   addAccount: (account: Omit<Account, 'id'>) => void;
   updateAccount: (id: string, updates: Partial<Account>) => void;
+  deleteAccount: (id: string, transferToAccountId?: string) => void;
+  setDefaultAccount: (id: string) => void;
   transferBalance: (fromId: string, toId: string, amount: number, notes?: string) => void;
   
   toggleHideBalance: () => void;
@@ -70,6 +77,7 @@ const initialAccounts: Account[] = [
     color: 'from-blue-600 to-indigo-700',
     icon: 'Landmark',
     isActive: true,
+    isPrimary: true,
   },
   {
     id: 'acc-2',
@@ -243,6 +251,39 @@ const initialNotifications: AppNotification[] = [
   }
 ];
 
+const initialSavingsGoals: SavingsGoal[] = [
+  {
+    id: 'goal-1',
+    title: 'Dana Darurat 6 Bulan',
+    targetAmount: 30000000,
+    currentAmount: 18500000,
+    deadline: '2026-12-31',
+    category: 'Dana Darurat',
+    color: 'from-emerald-500 to-teal-700',
+    notes: 'Prioritas utama perlindungan arus kas keluarga & usaha'
+  },
+  {
+    id: 'goal-2',
+    title: 'Upgrade Laptop & Kerja',
+    targetAmount: 15000000,
+    currentAmount: 9000000,
+    deadline: '2026-11-15',
+    category: 'Gadget',
+    color: 'from-blue-600 to-indigo-700',
+    notes: 'Untuk menunjang produktivitas editing & coding'
+  },
+  {
+    id: 'goal-3',
+    title: 'Liburan Akhir Tahun ke Jepang',
+    targetAmount: 25000000,
+    currentAmount: 12500000,
+    deadline: '2026-12-20',
+    category: 'Liburan',
+    color: 'from-purple-600 to-indigo-800',
+    notes: 'Tiket pesawat & akomodasi Tokyo - Kyoto'
+  }
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -269,6 +310,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>(() => {
     const saved = localStorage.getItem('fintrack_category_budgets');
     return saved ? JSON.parse(saved) : initialCategoryBudgets;
+  });
+
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(() => {
+    const saved = localStorage.getItem('fintrack_savings_goals');
+    return saved ? JSON.parse(saved) : initialSavingsGoals;
   });
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -305,6 +351,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('fintrack_category_budgets', JSON.stringify(categoryBudgets));
   }, [categoryBudgets]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_savings_goals', JSON.stringify(savingsGoals));
+  }, [savingsGoals]);
 
   const currentMonthPrefix = todayStr.slice(0, 7);
 
@@ -489,6 +539,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications(prev => [newNotif, ...prev]);
   };
 
+  const addSavingsGoal = (goalData: Omit<SavingsGoal, 'id'>) => {
+    const newGoal: SavingsGoal = {
+      ...goalData,
+      id: `goal-${Date.now()}`,
+    };
+    setSavingsGoals(prev => [newGoal, ...prev]);
+  };
+
+  const updateSavingsGoal = (id: string, updates: Partial<SavingsGoal>) => {
+    setSavingsGoals(prev => prev.map(g => (g.id === id ? { ...g, ...updates } : g)));
+  };
+
+  const deleteSavingsGoal = (id: string) => {
+    setSavingsGoals(prev => prev.filter(g => g.id !== id));
+  };
+
+  const addFundsToGoal = (goalId: string, amount: number, fromAccountId?: string) => {
+    if (amount <= 0) return;
+
+    // Deduct from account if provided
+    if (fromAccountId) {
+      const sourceAcc = accounts.find(a => a.id === fromAccountId);
+      if (sourceAcc && sourceAcc.balance >= amount) {
+        setAccounts(prev =>
+          prev.map(acc => (acc.id === fromAccountId ? { ...acc, balance: acc.balance - amount } : acc))
+        );
+
+        // Record a transaction for funding the savings goal
+        const goal = savingsGoals.find(g => g.id === goalId);
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        addTransaction({
+          accountId: fromAccountId,
+          type: 'expense',
+          status: 'completed',
+          amount,
+          category: 'Tabungan',
+          description: `Alokasi Tabungan: ${goal ? goal.title : 'Target Dana'}`,
+          transactionDate: today,
+          transactionTime: timeStr,
+          notes: `Setoran dana ke target ${goal?.title || ''}`,
+        });
+      }
+    }
+
+    setSavingsGoals(prev =>
+      prev.map(g => (g.id === goalId ? { ...g, currentAmount: g.currentAmount + amount } : g))
+    );
+  };
+
   const addAccount = (accountData: Omit<Account, 'id'>) => {
     const newAcc: Account = {
       ...accountData,
@@ -499,6 +601,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateAccount = (id: string, updates: Partial<Account>) => {
     setAccounts(prev => prev.map(a => (a.id === id ? { ...a, ...updates } : a)));
+  };
+
+  const setDefaultAccount = (id: string) => {
+    setAccounts(prev => prev.map(a => ({ ...a, isPrimary: a.id === id })));
+  };
+
+  const deleteAccount = (id: string, transferToAccountId?: string) => {
+    const accToDelete = accounts.find(a => a.id === id);
+    if (!accToDelete) return;
+
+    if (transferToAccountId && transferToAccountId !== id && accToDelete.balance > 0) {
+      setAccounts(prev =>
+        prev
+          .map(acc => {
+            if (acc.id === transferToAccountId) {
+              return { ...acc, balance: acc.balance + accToDelete.balance };
+            }
+            return acc;
+          })
+          .filter(acc => acc.id !== id)
+      );
+
+      // Reassign transactions to the new account
+      setTransactions(prev =>
+        prev.map(tx => (tx.accountId === id ? { ...tx, accountId: transferToAccountId } : tx))
+      );
+    } else {
+      setAccounts(prev => prev.filter(acc => acc.id !== id));
+    }
   };
 
   const transferBalance = (fromId: string, toId: string, amount: number, notes?: string) => {
@@ -609,8 +740,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications,
         categoryBudgets,
         categoryAlerts,
+        savingsGoals,
         setCategoryBudget,
         toggleCategoryBudget,
+        addSavingsGoal,
+        updateSavingsGoal,
+        deleteSavingsGoal,
+        addFundsToGoal,
         activeTab,
         setActiveTab,
         isAddModalOpen,
@@ -628,6 +764,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markScheduledAsCompleted,
         addAccount,
         updateAccount,
+        deleteAccount,
+        setDefaultAccount,
         transferBalance,
         toggleHideBalance,
         toggleDarkMode,

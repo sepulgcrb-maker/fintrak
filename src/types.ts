@@ -18,6 +18,7 @@ export type CategoryType =
   | 'Kesehatan'
   | 'Edukasi'
   | 'Hiburan'
+  | 'Tabungan'
   | 'Lainnya';
 
 export interface Account {
@@ -29,6 +30,8 @@ export interface Account {
   color: string;
   icon: string;
   isActive: boolean;
+  isPrimary?: boolean;
+  notes?: string;
 }
 
 export interface Transaction {
@@ -101,3 +104,15 @@ export interface ChatMessage {
 }
 
 export type ActiveTab = 'home' | 'transactions' | 'planning' | 'calendar' | 'reports' | 'accounts' | 'profile' | 'finai';
+
+export interface SavingsGoal {
+  id: string;
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string; // YYYY-MM-DD
+  category?: string; // 'Dana Darurat', 'Kendaraan', 'Liburan', 'Gadget', 'Pendidikan', 'Properti', 'Lainnya'
+  color?: string;
+  icon?: string;
+  notes?: string;
+}
