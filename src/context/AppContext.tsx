@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Account, Transaction, AppNotification, UserProfile, ActiveTab } from '../types';
+import { Account, Transaction, AppNotification, UserProfile, ActiveTab, CategoryBudget, CategoryBudgetAlert, CategoryType } from '../types';
 
 interface AppContextType {
   user: UserProfile;
   accounts: Account[];
   transactions: Transaction[];
   notifications: AppNotification[];
+  categoryBudgets: CategoryBudget[];
+  categoryAlerts: CategoryBudgetAlert[];
+  setCategoryBudget: (category: CategoryType, monthlyThreshold: number, enabled?: boolean) => void;
+  toggleCategoryBudget: (category: CategoryType) => void;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   isAddModalOpen: boolean;
@@ -197,6 +201,18 @@ const initialTransactions: Transaction[] = [
   }
 ];
 
+const initialCategoryBudgets: CategoryBudget[] = [
+  { category: 'Belanja', monthlyThreshold: 3000000, enabled: true },
+  { category: 'Makan & Minum', monthlyThreshold: 2500000, enabled: true },
+  { category: 'Operasional', monthlyThreshold: 8000000, enabled: true },
+  { category: 'Tagihan', monthlyThreshold: 4000000, enabled: true },
+  { category: 'Transportasi', monthlyThreshold: 1500000, enabled: true },
+  { category: 'Hiburan', monthlyThreshold: 1000000, enabled: true },
+  { category: 'Kesehatan', monthlyThreshold: 1500000, enabled: true },
+  { category: 'Edukasi', monthlyThreshold: 2000000, enabled: true },
+  { category: 'Lainnya', monthlyThreshold: 1500000, enabled: true },
+];
+
 const initialNotifications: AppNotification[] = [
   {
     id: 'notif-1',
@@ -250,6 +266,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : initialNotifications;
   });
 
+  const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>(() => {
+    const saved = localStorage.getItem('fintrack_category_budgets');
+    return saved ? JSON.parse(saved) : initialCategoryBudgets;
+  });
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalDefaults, setAddModalDefaults] = useState<{ type: 'income' | 'expense'; status: 'completed' | 'scheduled' }>({
@@ -280,6 +301,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('fintrack_notifications', JSON.stringify(notifications));
   }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_category_budgets', JSON.stringify(categoryBudgets));
+  }, [categoryBudgets]);
+
+  const currentMonthPrefix = todayStr.slice(0, 7);
+
+  // Real-time calculation of category spending against monthly thresholds
+  const categoryAlerts: CategoryBudgetAlert[] = React.useMemo(() => {
+    return categoryBudgets
+      .filter(b => b.enabled && b.monthlyThreshold > 0)
+      .map(b => {
+        const currentSpent = transactions
+          .filter(
+            t =>
+              t.type === 'expense' &&
+              t.status === 'completed' &&
+              t.category === b.category &&
+              t.transactionDate.startsWith(currentMonthPrefix)
+          )
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const percentage = Math.round((currentSpent / b.monthlyThreshold) * 100);
+        const exceededAmount = Math.max(0, currentSpent - b.monthlyThreshold);
+
+        return {
+          category: b.category,
+          currentSpent,
+          threshold: b.monthlyThreshold,
+          percentage,
+          exceededAmount,
+        };
+      })
+      .filter(alert => alert.percentage >= 100);
+  }, [categoryBudgets, transactions, currentMonthPrefix]);
+
+  // Real-time automatic notification trigger when a category threshold is breached
+  useEffect(() => {
+    if (categoryAlerts.length === 0) return;
+
+    categoryAlerts.forEach(alert => {
+      const alertId = `budget-alert-${alert.category}-${currentMonthPrefix}`;
+      setNotifications(prev => {
+        const exists = prev.some(n => n.id === alertId);
+        if (exists) return prev;
+
+        const newNotif: AppNotification = {
+          id: alertId,
+          title: `🚨 Peringatan FinAI: Anggaran ${alert.category} Terlampaui!`,
+          message: `Pengeluaran ${alert.category} bulan ini telah mencapai Rp ${alert.currentSpent.toLocaleString('id-ID')} (${alert.percentage}% dari batas threshold Rp ${alert.threshold.toLocaleString('id-ID')}). Berlebih Rp ${alert.exceededAmount.toLocaleString('id-ID')}.`,
+          type: 'alert',
+          date: todayStr,
+          read: false,
+          category: alert.category,
+          isBudgetAlert: true,
+        };
+        return [newNotif, ...prev];
+      });
+    });
+  }, [categoryAlerts, currentMonthPrefix]);
 
   const totalBalance = accounts.reduce((sum, acc) => (acc.isActive ? sum + acc.balance : sum), 0);
 
@@ -473,6 +554,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTransactions(prev => [outTx, inTx, ...prev]);
   };
 
+  const setCategoryBudget = (category: CategoryType, monthlyThreshold: number, enabled: boolean = true) => {
+    setCategoryBudgets(prev => {
+      const existingIndex = prev.findIndex(b => b.category === category);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = { ...updated[existingIndex], monthlyThreshold, enabled };
+        return updated;
+      } else {
+        return [...prev, { category, monthlyThreshold, enabled }];
+      }
+    });
+  };
+
+  const toggleCategoryBudget = (category: CategoryType) => {
+    setCategoryBudgets(prev =>
+      prev.map(b => (b.category === category ? { ...b, enabled: !b.enabled } : b))
+    );
+  };
+
   const toggleHideBalance = () => {
     setUser(prev => ({ ...prev, hideBalance: !prev.hideBalance }));
   };
@@ -507,6 +607,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         accounts,
         transactions,
         notifications,
+        categoryBudgets,
+        categoryAlerts,
+        setCategoryBudget,
+        toggleCategoryBudget,
         activeTab,
         setActiveTab,
         isAddModalOpen,

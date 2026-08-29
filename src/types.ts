@@ -50,6 +50,20 @@ export interface Transaction {
   updatedAt: string;
 }
 
+export interface CategoryBudget {
+  category: CategoryType;
+  monthlyThreshold: number;
+  enabled: boolean;
+}
+
+export interface CategoryBudgetAlert {
+  category: CategoryType;
+  currentSpent: number;
+  threshold: number;
+  percentage: number;
+  exceededAmount: number;
+}
+
 export interface AppNotification {
   id: string;
   title: string;
@@ -58,6 +72,8 @@ export interface AppNotification {
   date: string;
   read: boolean;
   relatedTransactionId?: string;
+  category?: CategoryType;
+  isBudgetAlert?: boolean;
 }
 
 export interface UserProfile {
@@ -73,4 +89,15 @@ export interface UserProfile {
   hideBalance: boolean;
 }
 
-export type ActiveTab = 'home' | 'transactions' | 'planning' | 'calendar' | 'reports' | 'accounts' | 'profile';
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  suggestedActions?: {
+    label: string;
+    action: 'add_income' | 'add_expense' | 'view_planning' | 'view_reports';
+  }[];
+}
+
+export type ActiveTab = 'home' | 'transactions' | 'planning' | 'calendar' | 'reports' | 'accounts' | 'profile' | 'finai';

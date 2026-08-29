@@ -108,9 +108,19 @@ export const Header: React.FC = () => {
                     notifications.map(n => (
                       <div
                         key={n.id}
-                        onClick={() => markNotificationAsRead(n.id)}
+                        onClick={() => {
+                          markNotificationAsRead(n.id);
+                          if (n.isBudgetAlert) {
+                            setActiveTab('finai');
+                            setIsNotifOpen(false);
+                          }
+                        }}
                         className={`p-3 rounded-xl transition-all cursor-pointer text-xs ${
-                          n.read
+                          n.isBudgetAlert
+                            ? n.read
+                              ? 'bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/50 dark:border-rose-900/40 text-slate-700 dark:text-slate-300'
+                              : 'bg-rose-100/70 dark:bg-rose-950/60 border border-rose-300/80 dark:border-rose-800 text-slate-900 dark:text-white font-medium'
+                            : n.read
                             ? 'bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400'
                             : 'bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/40 text-slate-900 dark:text-white font-medium'
                         }`}
@@ -118,10 +128,15 @@ export const Header: React.FC = () => {
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-semibold text-slate-900 dark:text-slate-100">{n.title}</p>
                           {!n.read && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0"></span>
+                            <span className={`w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0 ${n.isBudgetAlert ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
                           )}
                         </div>
                         <p className="mt-1 text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">{n.message}</p>
+                        {n.isBudgetAlert && (
+                          <span className="inline-block mt-1.5 text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline">
+                            Lihat Saran FinAI →
+                          </span>
+                        )}
                       </div>
                     ))
                   )}

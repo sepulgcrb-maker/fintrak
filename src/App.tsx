@@ -10,6 +10,7 @@ import { AccountsView } from './components/AccountsView';
 import { CalendarView } from './components/CalendarView';
 import { ReportsView } from './components/ReportsView';
 import { ProfileView } from './components/ProfileView';
+import { FinAIChat } from './components/FinAIChat';
 import { BottomNavigation } from './components/BottomNavigation';
 import { AddTransactionModal } from './components/AddTransactionModal';
 import { TransferModal } from './components/TransferModal';
@@ -63,6 +64,12 @@ const AppContent: React.FC = () => {
           {activeTab === 'reports' && (
             <div className="animate-in fade-in duration-150">
               <ReportsView />
+            </div>
+          )}
+
+          {activeTab === 'finai' && (
+            <div className="animate-in fade-in duration-150">
+              <FinAIChat />
             </div>
           )}
 

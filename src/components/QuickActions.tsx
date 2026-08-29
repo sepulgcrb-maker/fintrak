@@ -7,7 +7,9 @@ import {
   Send, 
   BarChart3, 
   Wallet, 
-  CalendarDays 
+  CalendarDays,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -16,15 +18,22 @@ export const QuickActions: React.FC = () => {
 
   const actions = [
     {
+      id: 'btn-menu-finai',
+      label: 'FinAI Advisor',
+      icon: Sparkles,
+      color: 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none group-hover:bg-emerald-700',
+      onClick: () => setActiveTab('finai'),
+    },
+    {
       id: 'btn-menu-income',
-      label: 'Tambah Pemasukan',
+      label: 'Tambah Masuk',
       icon: PlusCircle,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white',
       onClick: () => openAddModal('income', 'completed'),
     },
     {
       id: 'btn-menu-expense',
-      label: 'Tambah Pengeluaran',
+      label: 'Tambah Keluar',
       icon: MinusCircle,
       color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-500 group-hover:text-white',
       onClick: () => openAddModal('expense', 'completed'),
@@ -38,7 +47,7 @@ export const QuickActions: React.FC = () => {
     },
     {
       id: 'btn-menu-history',
-      label: 'Riwayat Transaksi',
+      label: 'Riwayat Mutasi',
       icon: Receipt,
       color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white',
       onClick: () => setActiveTab('transactions'),
@@ -52,21 +61,14 @@ export const QuickActions: React.FC = () => {
     },
     {
       id: 'btn-menu-reports',
-      label: 'Laporan Keuangan',
+      label: 'Laporan',
       icon: BarChart3,
       color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:bg-purple-500 group-hover:text-white',
       onClick: () => setActiveTab('reports'),
     },
     {
-      id: 'btn-menu-accounts',
-      label: 'Rekening & Dompet',
-      icon: Wallet,
-      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-white',
-      onClick: () => setActiveTab('accounts'),
-    },
-    {
       id: 'btn-menu-calendar',
-      label: 'Kalender Keuangan',
+      label: 'Kalender',
       icon: CalendarDays,
       color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 group-hover:bg-cyan-500 group-hover:text-white',
       onClick: () => setActiveTab('calendar'),
@@ -74,7 +76,30 @@ export const QuickActions: React.FC = () => {
   ];
 
   return (
-    <div className="px-4 py-2">
+    <div className="px-4 py-2 space-y-2.5">
+      {/* FinAI Smart Card Banner */}
+      <div 
+        onClick={() => setActiveTab('finai')}
+        className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-700 text-white flex items-center justify-between cursor-pointer hover:shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-[0.99] shadow-sm"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-amber-300 shadow-xs">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <p className="font-bold text-xs">FinAI Financial Advisor</p>
+              <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-md">Gemini</span>
+            </div>
+            <p className="text-[10px] text-emerald-100">Tanyakan analisis laporan, budget & tips menabung</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-xs font-bold bg-white text-emerald-900 px-3 py-1.5 rounded-xl shadow-xs shrink-0">
+          <span>Tanya</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </div>
+      </div>
+
       <div className="grid grid-cols-4 gap-2.5 sm:gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         {actions.map(act => {
           const Icon = act.icon;

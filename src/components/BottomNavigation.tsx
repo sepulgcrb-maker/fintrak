@@ -4,6 +4,7 @@ import {
   Receipt, 
   Plus, 
   CalendarDays, 
+  Sparkles,
   User 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -15,7 +16,7 @@ export const BottomNavigation: React.FC = () => {
     { id: 'home', label: 'Beranda', icon: Home },
     { id: 'transactions', label: 'Mutasi', icon: Receipt },
     { id: 'add', label: 'Tambah', icon: Plus, isAction: true },
-    { id: 'calendar', label: 'Kalender', icon: CalendarDays },
+    { id: 'finai', label: 'FinAI', icon: Sparkles },
     { id: 'profile', label: 'Profil', icon: User },
   ];
 

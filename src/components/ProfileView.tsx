@@ -11,17 +11,21 @@ import {
   Eye, 
   Download, 
   RotateCcw,
-  CheckCircle2
+  CheckCircle2,
+  Sliders,
+  BellRing
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { CategoryBudgetModal } from './CategoryBudgetModal';
 
 export const ProfileView: React.FC = () => {
-  const { user, updateUserProfile, toggleDarkMode, toggleHideBalance } = useApp();
+  const { user, updateUserProfile, toggleDarkMode, toggleHideBalance, categoryAlerts } = useApp();
   const [name, setName] = useState(user.name);
   const [businessName, setBusinessName] = useState(user.businessName || '');
   const [phone, setPhone] = useState(user.phone || '');
   const [email, setEmail] = useState(user.email);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isCategoryBudgetModalOpen, setIsCategoryBudgetModalOpen] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,6 +187,46 @@ export const ProfileView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Category Budget Threshold Alerts Box */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3 text-xs">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
+              <Sliders className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              Batas Anggaran Kategori (Threshold Alerts)
+            </h4>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Atur limit maksimal per pos pengeluaran bulanan dan dapatkan notifikasi otomatis dari FinAI saat melebihi batas.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${categoryAlerts.length > 0 ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+              {categoryAlerts.length > 0 
+                ? `🚨 ${categoryAlerts.length} Kategori Melebihi Batas Anggaran` 
+                : '🟢 Semua Kategori Dalam Batas Aman'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsCategoryBudgetModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs active:scale-98 transition-all cursor-pointer"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Atur Limit Kategori</span>
+          </button>
+        </div>
+      </div>
+
+      <CategoryBudgetModal 
+        isOpen={isCategoryBudgetModalOpen}
+        onClose={() => setIsCategoryBudgetModalOpen(false)}
+      />
     </div>
   );
 };
