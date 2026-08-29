@@ -22,6 +22,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { ChatMessage } from '../types';
 import { formatRupiah } from '../utils/formatters';
+import { generateOfflineReply } from '../utils/aiService';
 import { CategoryBudgetModal } from './CategoryBudgetModal';
 
 export const FinAIChat: React.FC = () => {
@@ -152,27 +153,28 @@ Bagaimana saya dapat membantu Anda hari ini? Anda bisa meminta **analisis lapora
         content: m.content,
       }));
 
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          history: historyPayload,
-          contextData,
-        }),
-      });
-
       let aiReply = '';
-      if (res.ok) {
-        const data = await res.json();
-        aiReply = data.reply || 'Maaf, FinAI tidak dapat memproses jawaban saat ini. Silakan coba kembali.';
-      } else {
-        try {
-          const errData = await res.json();
-          aiReply = errData.error || `Terjadi kendala pada server (Kode: ${res.status}). Silakan coba sesaat lagi.`;
-        } catch {
-          aiReply = `Terjadi kendala pada server (Kode: ${res.status}). Silakan coba sesaat lagi.`;
+      try {
+        const res = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            history: historyPayload,
+            contextData,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          aiReply = data.reply || generateOfflineReply(text, contextData);
+        } else {
+          // If serverless route reports error or status 500/404, smoothly use client financial engine
+          aiReply = generateOfflineReply(text, contextData);
         }
+      } catch (netErr) {
+        // Network/CORS/offline fallback
+        aiReply = generateOfflineReply(text, contextData);
       }
 
       // Determine smart interactive actions

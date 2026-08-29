@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { processAIChat } from '../../src/utils/aiService';
+import { processAIChat } from '../lib/aiService';
 
 // Helper to extract JSON body from Vercel Serverless Function request
 async function getRequestBody(req: any): Promise<any> {

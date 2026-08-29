@@ -1,5 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
-
 export interface ChatContextData {
   totalBalance?: number;
   projectedBalance?: number;
@@ -13,34 +11,6 @@ export interface ChatContextData {
   categoryBudgets?: any[];
   categoryAlerts?: any[];
   accounts?: any[];
-}
-
-export function buildSystemPrompt(contextData: ChatContextData = {}): string {
-  return `Anda adalah "FinAI", asisten penasihat keuangan dan analis data pintar dalam aplikasi FinTrack.
-Tugas Anda adalah membantu pengguna menganalisis laporan keuangan mereka, memberikan tips menabung yang tepat sasaran, serta memberikan rekomendasi anggaran (budget analysis) dan proyeksi cashflow berbasis data nyata transaksi mereka.
-
-Data Keuangan Pengguna Saat Ini:
-- Total Saldo Aktif: ${contextData.totalBalance !== undefined ? `Rp ${Number(contextData.totalBalance).toLocaleString('id-ID')}` : 'Tidak diketahui'}
-- Estimasi Saldo Mendatang: ${contextData.projectedBalance !== undefined ? `Rp ${Number(contextData.projectedBalance).toLocaleString('id-ID')}` : 'Tidak diketahui'}
-- Pemasukan Hari Ini: ${contextData.todayIncome !== undefined ? `Rp ${Number(contextData.todayIncome).toLocaleString('id-ID')}` : 'Rp 0'}
-- Pengeluaran Hari Ini: ${contextData.todayExpense !== undefined ? `Rp ${Number(contextData.todayExpense).toLocaleString('id-ID')}` : 'Rp 0'}
-- Pemasukan Terjadwal (Akan Datang): ${contextData.futureIncome !== undefined ? `Rp ${Number(contextData.futureIncome).toLocaleString('id-ID')}` : 'Rp 0'}
-- Pengeluaran Terjadwal (Akan Datang): ${contextData.futureExpense !== undefined ? `Rp ${Number(contextData.futureExpense).toLocaleString('id-ID')}` : 'Rp 0'}
-- Anggaran Bulanan Pengguna: ${contextData.monthlyBudget ? `Rp ${Number(contextData.monthlyBudget).toLocaleString('id-ID')}` : 'Rp 20.000.000'}
-- Akun Rekening/Dompet: ${contextData.accounts ? JSON.stringify(contextData.accounts) : 'Tidak ada data'}
-- Ringkasan Mutasi Terakhir: ${contextData.recentTransactions ? JSON.stringify(contextData.recentTransactions) : 'Tidak ada data'}
-- Distribusi Kategori Pengeluaran: ${contextData.categoryBreakdown ? JSON.stringify(contextData.categoryBreakdown) : 'Tidak ada data'}
-- Batas Threshold Anggaran per Kategori: ${contextData.categoryBudgets ? JSON.stringify(contextData.categoryBudgets) : 'Tidak ada data'}
-- 🚨 Kategori Pengeluaran yang MELEBIHI BATAS (Alerts): ${contextData.categoryAlerts && contextData.categoryAlerts.length > 0 ? JSON.stringify(contextData.categoryAlerts) : 'Tidak ada (Semua kategori dalam batas aman)'}
-
-Pedoman Respon FinAI:
-1. Sapa pengguna dengan ramah, hangat, dan profesional sebagai FinAI.
-2. Analisis pertanyaan pengguna secara mendalam dan selalu hubungkan dengan angka atau data transaksi riil mereka di atas.
-3. Gunakan format mata uang Rupiah standar (misal: Rp 1.500.000).
-4. Buat formatting yang rapi, terstruktur dengan poin-poin tebal (bullet points), serta ringkas dan praktis untuk dipraktikkan.
-5. Jika ada kategori pengeluaran yang MELEBIHI THRESHOLD, berikan prioritas peringatan dan rekomendasi langkah konkrit pengetatan anggaran.
-6. Jika pengguna menanyakan tips menabung, berikan strategi realistis seperti metode 50/30/20, pemangkasan pos bocor halus, atau alokasi dana darurat.
-7. Jika menanyakan analisis anggaran atau laporan, berikan evaluasi per kategori apakah pengeluaran saat ini sehat atau mendekati batas limit.`;
 }
 
 export function generateOfflineReply(message: string, contextData: ChatContextData = {}): string {
@@ -63,56 +33,6 @@ export function generateOfflineReply(message: string, contextData: ChatContextDa
   return reply;
 }
 
-export async function processAIChat({
-  message,
-  history = [],
-  contextData = {},
-}: {
-  message: string;
-  history?: { role: string; content: string }[];
-  contextData?: ChatContextData;
-}): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  const systemPrompt = buildSystemPrompt(contextData);
-
-  if (apiKey) {
-    try {
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          },
-        },
-      });
-
-      const contents = [
-        ...history.map((h) => ({
-          role: h.role === 'user' ? 'user' : 'model',
-          parts: [{ text: h.content }],
-        })),
-        {
-          role: 'user',
-          parts: [{ text: message }],
-        },
-      ];
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.7-flash',
-        contents,
-        config: {
-          systemInstruction: systemPrompt,
-          temperature: 0.7,
-        },
-      });
-
-      if (response.text) {
-        return response.text;
-      }
-    } catch (apiError) {
-      console.warn('Gemini API request failed, falling back to local reasoning:', apiError);
-    }
-  }
-
-  return generateOfflineReply(message, contextData);
-}
+export default {
+  generateOfflineReply,
+};
