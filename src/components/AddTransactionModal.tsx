@@ -8,7 +8,7 @@ const incomeCategories: CategoryType[] = ['Gaji', 'Penjualan', 'Proyek', 'Invoic
 const expenseCategories: CategoryType[] = ['Operasional', 'Belanja', 'Transportasi', 'Gaji Karyawan', 'Vendor', 'Tagihan', 'Makan & Minum', 'Kesehatan', 'Lainnya'];
 
 export const AddTransactionModal: React.FC = () => {
-  const { isAddModalOpen, closeAddModal, addModalDefaults, accounts, addTransaction } = useApp();
+  const { isAddModalOpen, closeAddModal, addModalDefaults, accounts, addTransaction, openReceiptModal } = useApp();
 
   const [type, setType] = useState<TransactionType>('income');
   const [status, setStatus] = useState<TransactionStatus>('completed');
@@ -47,7 +47,7 @@ export const AddTransactionModal: React.FC = () => {
     const parsedAmount = parseRupiahInput(amountRaw);
     if (!description || parsedAmount <= 0) return;
 
-    addTransaction({
+    const createdTx = addTransaction({
       accountId: accountId || accounts[0]?.id || 'acc-1',
       type,
       status,
@@ -65,6 +65,11 @@ export const AddTransactionModal: React.FC = () => {
     setAmountRaw('');
     setNotes('');
     closeAddModal();
+
+    // Directly show the generated receipt
+    if (createdTx) {
+      openReceiptModal(createdTx);
+    }
   };
 
   const currentCategories = type === 'income' ? incomeCategories : expenseCategories;

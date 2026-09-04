@@ -15,7 +15,7 @@ export const AddFundsToGoalModal: React.FC<AddFundsToGoalModalProps> = ({
   onClose,
   goal,
 }) => {
-  const { accounts, addFundsToGoal } = useApp();
+  const { accounts, addFundsToGoal, openReceiptModal } = useApp();
   const [amount, setAmount] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '');
 
@@ -28,9 +28,13 @@ export const AddFundsToGoalModal: React.FC<AddFundsToGoalModalProps> = ({
     const parsedAmount = parseInt(amount.replace(/[^0-9]/g, ''), 10);
     if (!parsedAmount || parsedAmount <= 0) return;
 
-    addFundsToGoal(goal.id, parsedAmount, selectedAccountId || undefined);
+    const tx = addFundsToGoal(goal.id, parsedAmount, selectedAccountId || undefined);
     setAmount('');
     onClose();
+
+    if (tx) {
+      openReceiptModal(tx);
+    }
   };
 
   const quickAmounts = [100000, 250000, 500000, 1000000, 2000000, remaining].filter(

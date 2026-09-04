@@ -14,7 +14,7 @@ interface AppContextType {
   addSavingsGoal: (goal: Omit<SavingsGoal, 'id'>) => void;
   updateSavingsGoal: (id: string, updates: Partial<SavingsGoal>) => void;
   deleteSavingsGoal: (id: string) => void;
-  addFundsToGoal: (goalId: string, amount: number, fromAccountId?: string) => void;
+  addFundsToGoal: (goalId: string, amount: number, fromAccountId?: string) => Transaction | undefined;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   isAddModalOpen: boolean;
@@ -24,10 +24,14 @@ interface AppContextType {
   isTransferModalOpen: boolean;
   openTransferModal: (fromAccountId?: string) => void;
   closeTransferModal: () => void;
+  isReceiptModalOpen: boolean;
+  selectedReceiptTx: Transaction | null;
+  openReceiptModal: (tx: Transaction) => void;
+  closeReceiptModal: () => void;
   selectedAccountId: string | null;
   setSelectedAccountId: (id: string | null) => void;
   
-  addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => void;
+  addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => Transaction;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   markScheduledAsCompleted: (id: string) => void;
@@ -36,7 +40,7 @@ interface AppContextType {
   updateAccount: (id: string, updates: Partial<Account>) => void;
   deleteAccount: (id: string, transferToAccountId?: string) => void;
   setDefaultAccount: (id: string) => void;
-  transferBalance: (fromId: string, toId: string, amount: number, notes?: string) => void;
+  transferBalance: (fromId: string, toId: string, amount: number, notes?: string) => { outTx: Transaction; inTx: Transaction } | undefined;
   
   toggleHideBalance: () => void;
   toggleDarkMode: () => void;
@@ -327,6 +331,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Receipt Modal State
+  const [selectedReceiptTx, setSelectedReceiptTx] = useState<Transaction | null>(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+
+  const openReceiptModal = (tx: Transaction) => {
+    setSelectedReceiptTx(tx);
+    setIsReceiptModalOpen(true);
+  };
+
+  const closeReceiptModal = () => {
+    setIsReceiptModalOpen(false);
+    setSelectedReceiptTx(null);
+  };
+
   useEffect(() => {
     localStorage.setItem('fintrack_user', JSON.stringify(user));
     if (user.darkMode) {
@@ -446,14 +464,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const closeTransferModal = () => setIsTransferModalOpen(false);
 
-  const addTransaction = (txData: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
-    const now = new Date().toISOString();
+  const addTransaction = (txData: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Transaction => {
+    const now = new Date();
+    const datePart = (txData.transactionDate || todayStr).replace(/[^0-9]/g, '');
+    const randPart = Math.floor(1000 + Math.random() * 9000);
+    const receiptNumber = txData.receiptNumber || `RESI-${datePart}-${randPart}`;
+
     const newTx: Transaction = {
       ...txData,
+      receiptNumber,
       id: `tx-${Date.now()}`,
       userId: user.id,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
     };
 
     setTransactions(prev => [newTx, ...prev]);
@@ -471,6 +494,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         })
       );
     }
+
+    return newTx;
   };
 
   const updateTransaction = (id: string, updates: Partial<Transaction>) => {
@@ -555,8 +580,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSavingsGoals(prev => prev.filter(g => g.id !== id));
   };
 
-  const addFundsToGoal = (goalId: string, amount: number, fromAccountId?: string) => {
-    if (amount <= 0) return;
+  const addFundsToGoal = (goalId: string, amount: number, fromAccountId?: string): Transaction | undefined => {
+    if (amount <= 0) return undefined;
+
+    let createdTx: Transaction | undefined;
 
     // Deduct from account if provided
     if (fromAccountId) {
@@ -572,7 +599,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-        addTransaction({
+        createdTx = addTransaction({
           accountId: fromAccountId,
           type: 'expense',
           status: 'completed',
@@ -589,6 +616,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSavingsGoals(prev =>
       prev.map(g => (g.id === goalId ? { ...g, currentAmount: g.currentAmount + amount } : g))
     );
+
+    return createdTx;
   };
 
   const addAccount = (accountData: Omit<Account, 'id'>) => {
@@ -649,9 +678,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const dateClean = todayStr.replace(/[^0-9]/g, '');
+    const randOut = Math.floor(1000 + Math.random() * 9000);
+    const randIn = Math.floor(1000 + Math.random() * 9000);
     
     const outTx: Transaction = {
       id: `tx-${Date.now()}-out`,
+      receiptNumber: `RESI-${dateClean}-${randOut}`,
       userId: user.id,
       accountId: fromId,
       type: 'expense',
@@ -662,12 +695,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       transactionDate: todayStr,
       transactionTime: timeStr,
       notes: notes || 'Pindah saldo antar rekening',
+      recipient: toAcc.name,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     };
 
     const inTx: Transaction = {
       id: `tx-${Date.now()}-in`,
+      receiptNumber: `RESI-${dateClean}-${randIn}`,
       userId: user.id,
       accountId: toId,
       type: 'income',
@@ -678,11 +713,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       transactionDate: todayStr,
       transactionTime: timeStr,
       notes: notes || 'Pindah saldo antar rekening',
+      recipient: user.name,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     };
 
     setTransactions(prev => [outTx, inTx, ...prev]);
+    return { outTx, inTx };
   };
 
   const setCategoryBudget = (category: CategoryType, monthlyThreshold: number, enabled: boolean = true) => {
@@ -756,6 +793,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isTransferModalOpen,
         openTransferModal,
         closeTransferModal,
+        isReceiptModalOpen,
+        selectedReceiptTx,
+        openReceiptModal,
+        closeReceiptModal,
         selectedAccountId,
         setSelectedAccountId,
         addTransaction,

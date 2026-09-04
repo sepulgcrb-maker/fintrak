@@ -36,6 +36,7 @@ export interface Account {
 
 export interface Transaction {
   id: string;
+  receiptNumber?: string;
   userId: string;
   accountId: string;
   type: TransactionType;

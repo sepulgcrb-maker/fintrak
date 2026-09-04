@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { formatRupiah, parseRupiahInput } from '../utils/formatters';
 
 export const TransferModal: React.FC = () => {
-  const { isTransferModalOpen, closeTransferModal, accounts, transferBalance, selectedAccountId } = useApp();
+  const { isTransferModalOpen, closeTransferModal, accounts, transferBalance, selectedAccountId, openReceiptModal } = useApp();
 
   const [fromAccountId, setFromAccountId] = useState(selectedAccountId || accounts[0]?.id || '');
   const [toAccountId, setToAccountId] = useState(
@@ -26,10 +26,14 @@ export const TransferModal: React.FC = () => {
     const amount = parseRupiahInput(amountRaw);
     if (amount <= 0 || fromAccountId === toAccountId) return;
 
-    transferBalance(fromAccountId, toAccountId, amount, notes);
+    const result = transferBalance(fromAccountId, toAccountId, amount, notes);
     setAmountRaw('');
     setNotes('');
     closeTransferModal();
+
+    if (result?.outTx) {
+      openReceiptModal(result.outTx);
+    }
   };
 
   const fromAccount = accounts.find(a => a.id === fromAccountId);

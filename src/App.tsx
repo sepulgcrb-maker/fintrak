@@ -14,9 +14,10 @@ import { FinAIChat } from './components/FinAIChat';
 import { BottomNavigation } from './components/BottomNavigation';
 import { AddTransactionModal } from './components/AddTransactionModal';
 import { TransferModal } from './components/TransferModal';
+import { TransactionReceiptModal } from './components/TransactionReceiptModal';
 
 const AppContent: React.FC = () => {
-  const { activeTab } = useApp();
+  const { activeTab, isReceiptModalOpen, selectedReceiptTx, closeReceiptModal } = useApp();
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased font-sans flex justify-center selection:bg-emerald-500 selection:text-white">
@@ -86,6 +87,11 @@ const AppContent: React.FC = () => {
         {/* Global Modals */}
         <AddTransactionModal />
         <TransferModal />
+        <TransactionReceiptModal 
+          isOpen={isReceiptModalOpen}
+          onClose={closeReceiptModal}
+          transaction={selectedReceiptTx}
+        />
       </main>
     </div>
   );

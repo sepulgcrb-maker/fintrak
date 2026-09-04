@@ -30,7 +30,8 @@ import {
   Shield,
   GraduationCap,
   Home,
-  Check
+  Check,
+  FileText
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatRupiah } from '../utils/formatters';
@@ -38,6 +39,7 @@ import { Account, SavingsGoal } from '../types';
 import AccountSettingsModal, { COLOR_PRESETS, ICON_PRESETS } from './AccountSettingsModal';
 import SavingsGoalModal, { GOAL_CATEGORIES } from './SavingsGoalModal';
 import AddFundsToGoalModal from './AddFundsToGoalModal';
+import { getReceiptNumber } from '../utils/receipt';
 
 export const AccountsView: React.FC = () => {
   const { 
@@ -47,7 +49,8 @@ export const AccountsView: React.FC = () => {
     transactions, 
     user,
     toggleHideBalance,
-    savingsGoals
+    savingsGoals,
+    openReceiptModal
   } = useApp();
 
   const [selectedAccId, setSelectedAccId] = useState<string>(accounts[0]?.id || '');
@@ -574,25 +577,47 @@ export const AccountsView: React.FC = () => {
                 Belum ada transaksi mutasi pada rekening ini.
               </div>
             ) : (
-              accountTransactions.slice(0, 10).map(tx => (
-                <div
-                  key={tx.id}
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
-                      {tx.type === 'income' ? '+' : '-'}
+              accountTransactions.slice(0, 10).map(tx => {
+                const receiptNum = getReceiptNumber(tx);
+                return (
+                  <div
+                    key={tx.id}
+                    onClick={() => openReceiptModal(tx)}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-xl transition-transform group-hover:scale-105 ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}`}>
+                        {tx.type === 'income' ? '+' : '-'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-bold text-slate-900 dark:text-white">{tx.description}</p>
+                          <span className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                            {receiptNum}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">{tx.category} • {tx.transactionDate}, {tx.transactionTime}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-slate-900 dark:text-white">{tx.description}</p>
-                      <p className="text-[10px] text-slate-400">{tx.category} • {tx.transactionDate}, {tx.transactionTime}</p>
+                    <div className="text-right flex flex-col items-end">
+                      <p className={`font-mono font-bold text-sm ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {tx.type === 'income' ? '+' : '-'} {formatRupiah(tx.amount)}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openReceiptModal(tx);
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline mt-0.5 font-semibold"
+                      >
+                        <FileText className="w-2.5 h-2.5" />
+                        <span>Lihat Resi</span>
+                      </button>
                     </div>
                   </div>
-                  <p className={`font-mono font-bold text-sm ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                    {tx.type === 'income' ? '+' : '-'} {formatRupiah(tx.amount)}
-                  </p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

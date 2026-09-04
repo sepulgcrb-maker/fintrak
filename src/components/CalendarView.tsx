@@ -5,13 +5,15 @@ import {
   Calendar as CalendarIcon, 
   ArrowDownLeft, 
   ArrowUpRight, 
-  Plus 
+  Plus,
+  FileText
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatRupiah, formatDateIndonesian } from '../utils/formatters';
+import { getReceiptNumber } from '../utils/receipt';
 
 export const CalendarView: React.FC = () => {
-  const { transactions, openAddModal } = useApp();
+  const { transactions, openAddModal, openReceiptModal } = useApp();
   
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -156,25 +158,47 @@ export const CalendarView: React.FC = () => {
             Tidak ada transaksi pada tanggal ini.
           </div>
         ) : (
-          dayTransactions.map(tx => (
-            <div
-              key={tx.id}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`p-2 rounded-xl ${tx.type === 'income' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
-                  {tx.type === 'income' ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+          dayTransactions.map(tx => {
+            const receiptNum = getReceiptNumber(tx);
+            return (
+              <div
+                key={tx.id}
+                onClick={() => openReceiptModal(tx)}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-emerald-300 dark:hover:border-emerald-800 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-xl transition-transform group-hover:scale-105 ${tx.type === 'income' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                    {tx.type === 'income' ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h5 className="text-xs font-bold text-slate-900 dark:text-white">{tx.description}</h5>
+                      <span className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        {receiptNum}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500">{tx.transactionTime} • {tx.category}</p>
+                  </div>
                 </div>
-                <div>
-                  <h5 className="text-xs font-bold text-slate-900 dark:text-white">{tx.description}</h5>
-                  <p className="text-[10px] text-slate-500">{tx.transactionTime} • {tx.category}</p>
+                <div className="text-right flex flex-col items-end">
+                  <p className={`text-xs font-bold font-mono ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {tx.type === 'income' ? '+' : '-'} {formatRupiah(tx.amount)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openReceiptModal(tx);
+                    }}
+                    className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline mt-0.5 font-semibold"
+                  >
+                    <FileText className="w-2.5 h-2.5" />
+                    <span>Resi</span>
+                  </button>
                 </div>
               </div>
-              <p className={`text-xs font-bold font-mono ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {tx.type === 'income' ? '+' : '-'} {formatRupiah(tx.amount)}
-              </p>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
