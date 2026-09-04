@@ -39,18 +39,11 @@ export const QuickActions: React.FC = () => {
       onClick: () => openAddModal('expense', 'completed'),
     },
     {
-      id: 'btn-menu-scheduled',
-      label: 'Akan Datang',
-      icon: CalendarPlus,
-      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500 group-hover:text-white',
-      onClick: () => setActiveTab('planning'),
-    },
-    {
-      id: 'btn-menu-history',
-      label: 'Riwayat Mutasi',
-      icon: Receipt,
-      color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white',
-      onClick: () => setActiveTab('transactions'),
+      id: 'btn-menu-wallets',
+      label: 'Kelola Dompet',
+      icon: Wallet,
+      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white',
+      onClick: () => setActiveTab('accounts'),
     },
     {
       id: 'btn-menu-transfer',
@@ -58,6 +51,13 @@ export const QuickActions: React.FC = () => {
       icon: Send,
       color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:bg-teal-500 group-hover:text-white',
       onClick: () => openTransferModal(),
+    },
+    {
+      id: 'btn-menu-history',
+      label: 'Riwayat Mutasi',
+      icon: Receipt,
+      color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white',
+      onClick: () => setActiveTab('transactions'),
     },
     {
       id: 'btn-menu-reports',

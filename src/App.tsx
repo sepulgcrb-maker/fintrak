@@ -2,6 +2,7 @@ import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { BalanceCard } from './components/BalanceCard';
+import { DashboardWallets } from './components/DashboardWallets';
 import { SummaryCards } from './components/SummaryCards';
 import { QuickActions } from './components/QuickActions';
 import { TransactionList } from './components/TransactionList';
@@ -32,6 +33,7 @@ const AppContent: React.FC = () => {
           {activeTab === 'home' && (
             <div className="space-y-1 pb-6 animate-in fade-in duration-150">
               <BalanceCard />
+              <DashboardWallets />
               <SummaryCards />
               <QuickActions />
               <TransactionList limit={5} showFilters={false} title="Transaksi Terbaru" />

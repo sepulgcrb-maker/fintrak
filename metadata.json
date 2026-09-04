@@ -1,6 +1,6 @@
 {
   "name": "FinTrack - Catatan Keuangan & Cashflow",
-  "description": "Aplikasi pencatatan keuangan pribadi dan bisnis modern dengan antarmuka mobile banking, cashflow real-time, prediksi saldo, ekspor laporan riwayat transaksi ke PDF, dan kalender transaksi.",
+  "description": "Aplikasi pencatatan keuangan pribadi dan bisnis modern dengan antarmuka mobile banking, kelola dompet & rekening langsung di dashboard, cashflow real-time, prediksi saldo, ekspor laporan riwayat transaksi ke PDF, dan kalender transaksi.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
