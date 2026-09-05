@@ -1,5 +1,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Account, Transaction, AppNotification, UserProfile, ActiveTab, CategoryBudget, CategoryBudgetAlert, CategoryType, SavingsGoal } from '../types';
+import { formatRupiah } from '../utils/formatters';
+import { 
+  Account, 
+  Transaction, 
+  AppNotification, 
+  UserProfile, 
+  ActiveTab, 
+  CategoryBudget, 
+  CategoryBudgetAlert, 
+  CategoryType, 
+  SavingsGoal,
+  Receivable,
+  Payable,
+  JournalEntry,
+  BankReconciliationItem,
+  ClosingPeriod,
+  AuditTrailItem
+} from '../types';
 
 interface AppContextType {
   user: UserProfile;
@@ -56,6 +73,32 @@ interface AppContextType {
   projectedBalance: number;
   refreshData: () => void;
   isRefreshing: boolean;
+
+  // Modul Laporan Keuangan & Akuntansi State
+  receivables: Receivable[];
+  addReceivable: (rec: Omit<Receivable, 'id'>) => void;
+  payReceivable: (id: string, amount: number, accountId: string) => void;
+  deleteReceivable: (id: string) => void;
+
+  payables: Payable[];
+  addPayable: (pay: Omit<Payable, 'id'>) => void;
+  payPayable: (id: string, amount: number, accountId: string) => void;
+  deletePayable: (id: string) => void;
+
+  journalEntries: JournalEntry[];
+  addJournalEntry: (entry: Omit<JournalEntry, 'id'>) => void;
+  deleteJournalEntry: (id: string) => void;
+
+  bankReconciliations: BankReconciliationItem[];
+  toggleBankReconciliation: (id: string) => void;
+  addBankReconciliationItem: (item: Omit<BankReconciliationItem, 'id'>) => void;
+
+  closingPeriods: ClosingPeriod[];
+  closeAccountingPeriod: (periodType: 'monthly' | 'yearly', periodName: string, netIncome: number, notes?: string) => void;
+  togglePeriodLock: (id: string) => void;
+
+  auditTrails: AuditTrailItem[];
+  addAuditLog: (action: string, details: string, module?: string) => void;
 }
 
 const defaultUser: UserProfile = {
@@ -288,6 +331,260 @@ const initialSavingsGoals: SavingsGoal[] = [
   }
 ];
 
+const initialReceivables: Receivable[] = [
+  {
+    id: 'rec-1',
+    invoiceNumber: 'INV-2026-001',
+    customerName: 'PT Mega Solusi Digital',
+    date: '2026-08-15',
+    dueDate: '2026-09-15',
+    amount: 15000000,
+    paidAmount: 5000000,
+    status: 'partial',
+    productOrService: 'Pengembangan Web & Aplikasi',
+    branch: 'Jakarta Pusat',
+    notes: 'Term of payment: DP 30%, Pelunasan 30 hari',
+  },
+  {
+    id: 'rec-2',
+    invoiceNumber: 'INV-2026-002',
+    customerName: 'CV Sejahtera Abadi',
+    date: '2026-08-25',
+    dueDate: '2026-09-20',
+    amount: 7500000,
+    paidAmount: 0,
+    status: 'unpaid',
+    productOrService: 'Jasa Konsultasi IT & Cloud',
+    branch: 'Surabaya',
+    notes: 'Invoice jasa konsultasi bulan Agustus',
+  },
+  {
+    id: 'rec-3',
+    invoiceNumber: 'INV-2026-003',
+    customerName: 'PT Berkah Niaga Sentosa',
+    date: '2026-08-01',
+    dueDate: '2026-08-25',
+    amount: 22000000,
+    paidAmount: 22000000,
+    status: 'paid',
+    productOrService: 'Maintenance Sistem ERP',
+    branch: 'Bandung',
+    notes: 'Lunas via transfer BCA',
+  },
+  {
+    id: 'rec-4',
+    invoiceNumber: 'INV-2026-004',
+    customerName: 'Toko Makmur Jaya',
+    date: '2026-07-20',
+    dueDate: '2026-08-10',
+    amount: 4200000,
+    paidAmount: 0,
+    status: 'overdue',
+    productOrService: 'Software Kasir & POS',
+    branch: 'Jakarta Barat',
+    notes: 'Melewati jatuh tempo 25 hari',
+  },
+];
+
+const initialPayables: Payable[] = [
+  {
+    id: 'pay-1',
+    billNumber: 'BILL-2026-081',
+    vendorName: 'PT Cloud Hosting Global',
+    date: '2026-08-20',
+    dueDate: '2026-09-10',
+    amount: 3500000,
+    paidAmount: 1500000,
+    status: 'partial',
+    category: 'Teknologi & Server',
+    department: 'IT Infrastructure',
+    notes: 'Tagihan server cloud semester ganjil',
+  },
+  {
+    id: 'pay-2',
+    billNumber: 'BILL-2026-082',
+    vendorName: 'CV Distributor Kertas & ATK',
+    date: '2026-08-28',
+    dueDate: '2026-09-15',
+    amount: 1850000,
+    paidAmount: 0,
+    status: 'unpaid',
+    category: 'Operasional Kantor',
+    department: 'General Affairs',
+    notes: 'Suplai kertas, toner, & ATK kantor',
+  },
+  {
+    id: 'pay-3',
+    billNumber: 'BILL-2026-083',
+    vendorName: 'Vendor Sewa Gedung Kantor',
+    date: '2026-09-01',
+    dueDate: '2026-09-25',
+    amount: 12000000,
+    paidAmount: 0,
+    status: 'unpaid',
+    category: 'Sewa & Gedung',
+    department: 'Finance & HR',
+    notes: 'Sewa ruang kerja kuartal IV',
+  },
+  {
+    id: 'pay-4',
+    billNumber: 'BILL-2026-080',
+    vendorName: 'PT Logistik Cepat Aman',
+    date: '2026-08-05',
+    dueDate: '2026-08-20',
+    amount: 950000,
+    paidAmount: 950000,
+    status: 'paid',
+    category: 'Logistik & Pengiriman',
+    department: 'Operasional',
+    notes: 'Lunas',
+  },
+];
+
+const initialJournalEntries: JournalEntry[] = [
+  {
+    id: 'jrn-1',
+    entryNumber: 'JU-20260901-001',
+    date: '2026-09-01',
+    description: 'Penerimaan Pendapatan Proyek Klien',
+    reference: 'INV-2026-003',
+    isAuto: true,
+    lines: [
+      { id: 'jl-1', accountCode: '1-1100', accountName: 'Kas & Bank BCA', debit: 22000000, credit: 0 },
+      { id: 'jl-2', accountCode: '4-1000', accountName: 'Pendapatan Jasa & Proyek', debit: 0, credit: 22000000 }
+    ]
+  },
+  {
+    id: 'jrn-2',
+    entryNumber: 'JU-20260902-002',
+    date: '2026-09-02',
+    description: 'Pembayaran Beban Operasional Kantor & Konsumsi',
+    reference: 'VOUCHER-0902',
+    isAuto: true,
+    lines: [
+      { id: 'jl-3', accountCode: '6-1100', accountName: 'Beban Operasional & ATK', debit: 750000, credit: 0 },
+      { id: 'jl-4', accountCode: '1-1102', accountName: 'Kas Operasional Tunai', debit: 0, credit: 750000 }
+    ]
+  },
+  {
+    id: 'jrn-3',
+    entryNumber: 'JU-20260903-003',
+    date: '2026-09-03',
+    description: 'Pencatatan Piutang Usaha Proyek Web',
+    reference: 'INV-2026-001',
+    isAuto: true,
+    lines: [
+      { id: 'jl-5', accountCode: '1-1200', accountName: 'Piutang Usaha (AR)', debit: 15000000, credit: 0 },
+      { id: 'jl-6', accountCode: '4-1000', accountName: 'Pendapatan Usaha Belum Tertagih', debit: 0, credit: 15000000 }
+    ]
+  },
+  {
+    id: 'jrn-4',
+    entryNumber: 'JU-20260904-004',
+    date: '2026-09-04',
+    description: 'Pencatatan Beban Sewa Kantor Terutang',
+    reference: 'BILL-2026-083',
+    isAuto: false,
+    lines: [
+      { id: 'jl-7', accountCode: '6-1200', accountName: 'Beban Sewa Gedung', debit: 12000000, credit: 0 },
+      { id: 'jl-8', accountCode: '2-1100', accountName: 'Hutang Usaha (AP)', debit: 0, credit: 12000000 }
+    ]
+  }
+];
+
+const initialBankReconciliations: BankReconciliationItem[] = [
+  {
+    id: 'rec-item-1',
+    transactionId: 'tx-1',
+    accountId: 'acc-1',
+    statementDate: todayStr,
+    description: 'TRSF CR Gaji Bulanan Payroll',
+    amount: 10000000,
+    isMatched: true,
+    reconciledAt: todayStr,
+    notes: 'Cocok dengan mutasi bank BCA',
+  },
+  {
+    id: 'rec-item-2',
+    transactionId: 'tx-3',
+    accountId: 'acc-4',
+    statementDate: yesterdayStr,
+    description: 'TRSF CR Pembayaran Invoice PT Mitra',
+    amount: 5000000,
+    isMatched: true,
+    reconciledAt: yesterdayStr,
+    notes: 'Cocok dengan mutasi rekening Mandiri',
+  },
+  {
+    id: 'rec-item-3',
+    transactionId: 'tx-2',
+    accountId: 'acc-2',
+    statementDate: todayStr,
+    description: 'TARIK TUNAI / BELANJA OPERASIONAL',
+    amount: 750000,
+    isMatched: false,
+    notes: 'Kuitansi fisik di petty cash kasir',
+  },
+];
+
+const initialClosingPeriods: ClosingPeriod[] = [
+  {
+    id: 'close-1',
+    periodType: 'monthly',
+    periodName: 'Juli 2026',
+    closedDate: '2026-08-01',
+    closedBy: 'Budi Santoso (Direktur)',
+    isLocked: true,
+    netIncome: 14250000,
+    notes: 'Tutup buku bulanan selesai dan telah diverifikasi akuntan internal.',
+  },
+  {
+    id: 'close-2',
+    periodType: 'monthly',
+    periodName: 'Agustus 2026',
+    closedDate: '2026-09-01',
+    closedBy: 'Budi Santoso (Direktur)',
+    isLocked: true,
+    netIncome: 18920000,
+    notes: 'Tutup buku periode Agustus 2026, status locked.',
+  },
+];
+
+const initialAuditTrails: AuditTrailItem[] = [
+  {
+    id: 'audit-1',
+    timestamp: '2026-09-01 09:15:20',
+    action: 'TUTUP BUKU BULANAN',
+    user: 'Budi Santoso',
+    details: 'Melakukan closing periode Agustus 2026 dengan laba bersih Rp 18.920.000',
+    module: 'Closing Periode',
+  },
+  {
+    id: 'audit-2',
+    timestamp: '2026-09-02 11:30:10',
+    action: 'BUAT INVOICE PIUTANG',
+    user: 'Staff Keuangan',
+    details: 'Menerbitkan INV-2026-002 untuk CV Sejahtera Abadi senilai Rp 7.500.000',
+    module: 'Piutang',
+  },
+  {
+    id: 'audit-3',
+    timestamp: '2026-09-03 14:05:44',
+    action: 'REKONSILIASI BANK',
+    user: 'Budi Santoso',
+    details: 'Menandai mutasi BCA Rp 10.000.000 cocok dengan rekening koran',
+    module: 'Kas & Bank',
+  },
+  {
+    id: 'audit-4',
+    timestamp: '2026-09-04 10:20:00',
+    action: 'PEMBAYARAN PIUTANG',
+    user: 'Budi Santoso',
+    details: 'Menerima pembayaran piutang PT Mega Solusi Digital Rp 5.000.000 ke Rekening BCA',
+    module: 'Piutang',
+  },
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -319,6 +616,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>(() => {
     const saved = localStorage.getItem('fintrack_savings_goals');
     return saved ? JSON.parse(saved) : initialSavingsGoals;
+  });
+
+  // Financial & Accounting State
+  const [receivables, setReceivables] = useState<Receivable[]>(() => {
+    const saved = localStorage.getItem('fintrack_receivables');
+    return saved ? JSON.parse(saved) : initialReceivables;
+  });
+
+  const [payables, setPayables] = useState<Payable[]>(() => {
+    const saved = localStorage.getItem('fintrack_payables');
+    return saved ? JSON.parse(saved) : initialPayables;
+  });
+
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => {
+    const saved = localStorage.getItem('fintrack_journal_entries');
+    return saved ? JSON.parse(saved) : initialJournalEntries;
+  });
+
+  const [bankReconciliations, setBankReconciliations] = useState<BankReconciliationItem[]>(() => {
+    const saved = localStorage.getItem('fintrack_bank_reconciliations');
+    return saved ? JSON.parse(saved) : initialBankReconciliations;
+  });
+
+  const [closingPeriods, setClosingPeriods] = useState<ClosingPeriod[]>(() => {
+    const saved = localStorage.getItem('fintrack_closing_periods');
+    return saved ? JSON.parse(saved) : initialClosingPeriods;
+  });
+
+  const [auditTrails, setAuditTrails] = useState<AuditTrailItem[]>(() => {
+    const saved = localStorage.getItem('fintrack_audit_trails');
+    return saved ? JSON.parse(saved) : initialAuditTrails;
   });
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -373,6 +701,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('fintrack_savings_goals', JSON.stringify(savingsGoals));
   }, [savingsGoals]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_receivables', JSON.stringify(receivables));
+  }, [receivables]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_payables', JSON.stringify(payables));
+  }, [payables]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_journal_entries', JSON.stringify(journalEntries));
+  }, [journalEntries]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_bank_reconciliations', JSON.stringify(bankReconciliations));
+  }, [bankReconciliations]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_closing_periods', JSON.stringify(closingPeriods));
+  }, [closingPeriods]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_audit_trails', JSON.stringify(auditTrails));
+  }, [auditTrails]);
 
   const currentMonthPrefix = todayStr.slice(0, 7);
 
@@ -768,6 +1120,165 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 500);
   };
 
+  // Financial & Accounting Handlers
+  const addAuditLog = (action: string, details: string, module: string = 'Akuntansi') => {
+    const newLog: AuditTrailItem = {
+      id: `audit-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      action,
+      user: user.name || 'Admin Keuangan',
+      details,
+      module,
+    };
+    setAuditTrails(prev => [newLog, ...prev]);
+  };
+
+  const addReceivable = (rec: Omit<Receivable, 'id'>) => {
+    const id = `rec-${Date.now()}`;
+    const newRec: Receivable = { ...rec, id };
+    setReceivables(prev => [newRec, ...prev]);
+    addAuditLog('BUAT PIUTANG', `Menerbitkan invoice ${rec.invoiceNumber} untuk ${rec.customerName} sebesar ${formatRupiah(rec.amount)}`, 'Piutang');
+  };
+
+  const payReceivable = (id: string, amount: number, accountId: string) => {
+    const rec = receivables.find(r => r.id === id);
+    if (!rec) return;
+
+    setReceivables(prev => prev.map(item => {
+      if (item.id === id) {
+        const newPaid = item.paidAmount + amount;
+        const newStatus = newPaid >= item.amount ? 'paid' : 'partial';
+        return { ...item, paidAmount: newPaid, status: newStatus };
+      }
+      return item;
+    }));
+
+    addTransaction({
+      accountId,
+      type: 'income',
+      status: 'completed',
+      amount,
+      category: 'Invoice',
+      description: `Pelunasan Piutang: ${rec.invoiceNumber} (${rec.customerName})`,
+      transactionDate: new Date().toISOString().split('T')[0],
+      transactionTime: new Date().toTimeString().slice(0, 5),
+      notes: `Pelunasan piutang ${rec.invoiceNumber}`,
+    });
+    addAuditLog('PEMBAYARAN PIUTANG', `Penerimaan kas sebesar ${formatRupiah(amount)} untuk invoice ${rec.invoiceNumber} (${rec.customerName})`, 'Piutang');
+  };
+
+  const deleteReceivable = (id: string) => {
+    const rec = receivables.find(r => r.id === id);
+    setReceivables(prev => prev.filter(r => r.id !== id));
+    if (rec) {
+      addAuditLog('HAPUS PIUTANG', `Menghapus invoice piutang ${rec.invoiceNumber}`, 'Piutang');
+    }
+  };
+
+  const addPayable = (pay: Omit<Payable, 'id'>) => {
+    const id = `pay-${Date.now()}`;
+    const newPay: Payable = { ...pay, id };
+    setPayables(prev => [newPay, ...prev]);
+    addAuditLog('BUAT HUTANG', `Mencatat faktur tagihan ${pay.billNumber} dari ${pay.vendorName} sebesar ${formatRupiah(pay.amount)}`, 'Hutang');
+  };
+
+  const payPayable = (id: string, amount: number, accountId: string) => {
+    const payable = payables.find(p => p.id === id);
+    if (!payable) return;
+
+    setPayables(prev => prev.map(item => {
+      if (item.id === id) {
+        const newPaid = item.paidAmount + amount;
+        const newStatus = newPaid >= item.amount ? 'paid' : 'partial';
+        return { ...item, paidAmount: newPaid, status: newStatus };
+      }
+      return item;
+    }));
+
+    addTransaction({
+      accountId,
+      type: 'expense',
+      status: 'completed',
+      amount,
+      category: 'Vendor',
+      description: `Bayar Hutang: ${payable.billNumber} (${payable.vendorName})`,
+      transactionDate: new Date().toISOString().split('T')[0],
+      transactionTime: new Date().toTimeString().slice(0, 5),
+      notes: `Pembayaran hutang faktur ${payable.billNumber}`,
+    });
+    addAuditLog('PEMBAYARAN HUTANG', `Pengeluaran kas sebesar ${formatRupiah(amount)} untuk tagihan ${payable.billNumber} (${payable.vendorName})`, 'Hutang');
+  };
+
+  const deletePayable = (id: string) => {
+    const payable = payables.find(p => p.id === id);
+    setPayables(prev => prev.filter(p => p.id !== id));
+    if (payable) {
+      addAuditLog('HAPUS HUTANG', `Menghapus faktur hutang ${payable.billNumber}`, 'Hutang');
+    }
+  };
+
+  const addJournalEntry = (entry: Omit<JournalEntry, 'id'>) => {
+    const id = `jrn-${Date.now()}`;
+    const newEntry: JournalEntry = { ...entry, id };
+    setJournalEntries(prev => [newEntry, ...prev]);
+    addAuditLog('TAMBAH JURNAL UMUM', `Membuat jurnal ${entry.entryNumber}: ${entry.description}`, 'Jurnal Umum');
+  };
+
+  const deleteJournalEntry = (id: string) => {
+    const entry = journalEntries.find(j => j.id === id);
+    setJournalEntries(prev => prev.filter(j => j.id !== id));
+    if (entry) {
+      addAuditLog('HAPUS JURNAL', `Menghapus jurnal ${entry.entryNumber}`, 'Jurnal Umum');
+    }
+  };
+
+  const toggleBankReconciliation = (id: string) => {
+    setBankReconciliations(prev => prev.map(item => {
+      if (item.id === id) {
+        const newMatched = !item.isMatched;
+        return {
+          ...item,
+          isMatched: newMatched,
+          reconciledAt: newMatched ? new Date().toISOString().split('T')[0] : undefined
+        };
+      }
+      return item;
+    }));
+    addAuditLog('UPDATE REKONSILIASI', `Memperbarui status rekonsiliasi bank item ID: ${id}`, 'Kas & Bank');
+  };
+
+  const addBankReconciliationItem = (item: Omit<BankReconciliationItem, 'id'>) => {
+    const newItem: BankReconciliationItem = { ...item, id: `recon-${Date.now()}` };
+    setBankReconciliations(prev => [newItem, ...prev]);
+    addAuditLog('TAMBAH ITEM REKONSILIASI', `Menambah data mutasi bank untuk rekonsiliasi: ${item.description}`, 'Kas & Bank');
+  };
+
+  const closeAccountingPeriod = (periodType: 'monthly' | 'yearly', periodName: string, netIncome: number, notes?: string) => {
+    const newClosing: ClosingPeriod = {
+      id: `closing-${Date.now()}`,
+      periodType,
+      periodName,
+      closedDate: new Date().toISOString().split('T')[0],
+      closedBy: user.name || 'Admin',
+      isLocked: true,
+      netIncome,
+      notes,
+    };
+    setClosingPeriods(prev => [newClosing, ...prev]);
+    addAuditLog(`TUTUP BUKU ${periodType.toUpperCase()}`, `Menutup buku periode ${periodName} dengan Laba Bersih ${formatRupiah(netIncome)}`, 'Closing Periode');
+  };
+
+  const togglePeriodLock = (id: string) => {
+    setClosingPeriods(prev => prev.map(p => {
+      if (p.id === id) {
+        const updatedLock = !p.isLocked;
+        addAuditLog(updatedLock ? 'KUNCI PERIODE' : 'BUKA KUNCI PERIODE', `${updatedLock ? 'Mengunci' : 'Membuka kunci'} transaksi periode ${p.periodName}`, 'Closing Periode');
+        return { ...p, isLocked: updatedLock };
+      }
+      return p;
+    }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -821,6 +1332,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         projectedBalance,
         refreshData,
         isRefreshing,
+
+        // Financial & Accounting Exports
+        receivables,
+        addReceivable,
+        payReceivable,
+        deleteReceivable,
+        payables,
+        addPayable,
+        payPayable,
+        deletePayable,
+        journalEntries,
+        addJournalEntry,
+        deleteJournalEntry,
+        bankReconciliations,
+        toggleBankReconciliation,
+        addBankReconciliationItem,
+        closingPeriods,
+        closeAccountingPeriod,
+        togglePeriodLock,
+        auditTrails,
+        addAuditLog,
       }}
     >
       {children}

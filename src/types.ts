@@ -104,7 +104,7 @@ export interface ChatMessage {
   }[];
 }
 
-export type ActiveTab = 'home' | 'transactions' | 'planning' | 'calendar' | 'reports' | 'accounts' | 'profile' | 'finai';
+export type ActiveTab = 'home' | 'transactions' | 'planning' | 'calendar' | 'reports' | 'accounts' | 'profile' | 'finai' | 'financial';
 
 export interface SavingsGoal {
   id: string;
@@ -116,4 +116,100 @@ export interface SavingsGoal {
   color?: string;
   icon?: string;
   notes?: string;
+}
+
+// Financial Accounting & Reporting Types
+export type FinancialPeriod = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+
+export type FinancialSubTab = 
+  | 'dashboard' 
+  | 'pnl' 
+  | 'balance' 
+  | 'cashflow' 
+  | 'ledger' 
+  | 'journal' 
+  | 'receivables' 
+  | 'payables' 
+  | 'bank' 
+  | 'tax' 
+  | 'analysis' 
+  | 'budget' 
+  | 'closing';
+
+export interface Receivable {
+  id: string;
+  invoiceNumber: string;
+  customerName: string;
+  date: string;
+  dueDate: string;
+  amount: number;
+  paidAmount: number;
+  status: 'unpaid' | 'partial' | 'paid' | 'overdue';
+  productOrService?: string;
+  branch?: string;
+  notes?: string;
+}
+
+export interface Payable {
+  id: string;
+  billNumber: string;
+  vendorName: string;
+  date: string;
+  dueDate: string;
+  amount: number;
+  paidAmount: number;
+  status: 'unpaid' | 'partial' | 'paid' | 'overdue';
+  category?: string;
+  department?: string;
+  notes?: string;
+}
+
+export interface JournalLine {
+  id: string;
+  accountCode: string;
+  accountName: string;
+  debit: number;
+  credit: number;
+}
+
+export interface JournalEntry {
+  id: string;
+  entryNumber: string;
+  date: string;
+  description: string;
+  reference?: string;
+  lines: JournalLine[];
+  isAuto?: boolean;
+}
+
+export interface BankReconciliationItem {
+  id: string;
+  transactionId: string;
+  accountId: string;
+  statementDate: string;
+  description: string;
+  amount: number;
+  isMatched: boolean;
+  reconciledAt?: string;
+  notes?: string;
+}
+
+export interface ClosingPeriod {
+  id: string;
+  periodType: 'monthly' | 'yearly';
+  periodName: string;
+  closedDate: string;
+  closedBy: string;
+  isLocked: boolean;
+  netIncome: number;
+  notes?: string;
+}
+
+export interface AuditTrailItem {
+  id: string;
+  timestamp: string;
+  action: string;
+  user: string;
+  details: string;
+  module: string;
 }

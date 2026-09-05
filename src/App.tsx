@@ -12,6 +12,7 @@ import { CalendarView } from './components/CalendarView';
 import { ReportsView } from './components/ReportsView';
 import { ProfileView } from './components/ProfileView';
 import { FinAIChat } from './components/FinAIChat';
+import { FinancialModuleContainer } from './components/financial/FinancialModuleContainer';
 import { BottomNavigation } from './components/BottomNavigation';
 import { AddTransactionModal } from './components/AddTransactionModal';
 import { TransferModal } from './components/TransferModal';
@@ -23,7 +24,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased font-sans flex justify-center selection:bg-emerald-500 selection:text-white">
       {/* Mobile-first viewport wrapper */}
-      <main className="w-full max-w-md min-h-screen flex flex-col relative pb-16 bg-slate-50 dark:bg-slate-950 sm:shadow-2xl sm:border-x sm:border-slate-200/80 dark:sm:border-slate-800/80">
+      <main className={`w-full ${activeTab === 'financial' ? 'max-w-4xl' : 'max-w-md'} transition-all duration-200 min-h-screen flex flex-col relative pb-16 bg-slate-50 dark:bg-slate-950 sm:shadow-2xl sm:border-x sm:border-slate-200/80 dark:sm:border-slate-800/80`}>
         
         {/* Top App Bar */}
         <Header />
@@ -37,6 +38,12 @@ const AppContent: React.FC = () => {
               <SummaryCards />
               <QuickActions />
               <TransactionList limit={5} showFilters={false} title="Transaksi Terbaru" />
+            </div>
+          )}
+
+          {activeTab === 'financial' && (
+            <div className="animate-in fade-in duration-150">
+              <FinancialModuleContainer />
             </div>
           )}
 

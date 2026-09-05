@@ -153,11 +153,20 @@ export const ReportsView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('financial')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+            title="Buka Modul Akuntansi Lengkap: Laba Rugi, Neraca, Arus Kas, Buku Besar, Jurnal, Pajak"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Modul Akuntansi</span>
+          </button>
+
           {/* Main Export to PDF Button */}
           <button
             id="export-pdf-main-btn"
             onClick={() => setIsExportModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 border border-slate-200/60 dark:border-slate-700"
             title="Ekspor Riwayat Transaksi ke Format Dokumen PDF"
           >
             <FileDown className="w-4 h-4" />

@@ -3,7 +3,7 @@ import {
   Home, 
   Receipt, 
   Plus, 
-  CalendarDays, 
+  FileSpreadsheet, 
   Sparkles,
   User 
 } from 'lucide-react';
@@ -14,10 +14,10 @@ export const BottomNavigation: React.FC = () => {
 
   const navItems = [
     { id: 'home', label: 'Beranda', icon: Home },
-    { id: 'transactions', label: 'Mutasi', icon: Receipt },
+    { id: 'financial', label: 'Keuangan', icon: FileSpreadsheet },
     { id: 'add', label: 'Tambah', icon: Plus, isAction: true },
+    { id: 'transactions', label: 'Mutasi', icon: Receipt },
     { id: 'finai', label: 'FinAI', icon: Sparkles },
-    { id: 'profile', label: 'Profil', icon: User },
   ];
 
   return (

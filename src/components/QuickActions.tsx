@@ -9,7 +9,8 @@ import {
   Wallet, 
   CalendarDays,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -18,11 +19,11 @@ export const QuickActions: React.FC = () => {
 
   const actions = [
     {
-      id: 'btn-menu-finai',
-      label: 'FinAI Advisor',
-      icon: Sparkles,
+      id: 'btn-menu-financial',
+      label: 'Lap. Keuangan',
+      icon: FileSpreadsheet,
       color: 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none group-hover:bg-emerald-700',
-      onClick: () => setActiveTab('finai'),
+      onClick: () => setActiveTab('financial'),
     },
     {
       id: 'btn-menu-income',
@@ -42,14 +43,14 @@ export const QuickActions: React.FC = () => {
       id: 'btn-menu-wallets',
       label: 'Kelola Dompet',
       icon: Wallet,
-      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white',
+      color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:bg-teal-500 group-hover:text-white',
       onClick: () => setActiveTab('accounts'),
     },
     {
       id: 'btn-menu-transfer',
       label: 'Transfer Saldo',
       icon: Send,
-      color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:bg-teal-500 group-hover:text-white',
+      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500 group-hover:text-white',
       onClick: () => openTransferModal(),
     },
     {
@@ -61,7 +62,7 @@ export const QuickActions: React.FC = () => {
     },
     {
       id: 'btn-menu-reports',
-      label: 'Laporan',
+      label: 'Statistik',
       icon: BarChart3,
       color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:bg-purple-500 group-hover:text-white',
       onClick: () => setActiveTab('reports'),
