@@ -10,16 +10,27 @@ import {
 import { TaxReport } from '../../utils/financialCalculations';
 import { formatRupiah } from '../../utils/formatters';
 
-interface TaxReportViewProps {
-  taxReport: TaxReport;
-  periodLabel: string;
+export interface TaxReportViewProps {
+  taxReport?: TaxReport;
+  periodLabel?: string;
 }
 
 export const TaxReportView: React.FC<TaxReportViewProps> = ({
   taxReport,
-  periodLabel,
+  periodLabel = 'Bulan Ini',
 }) => {
-  const isVatUnderpaid = taxReport.netVatPayable >= 0;
+  const defaultReport: TaxReport = {
+    grossRevenue: 0,
+    taxableSales: 0,
+    outputVat: 0,
+    taxablePurchases: 0,
+    inputVat: 0,
+    netVatPayable: 0,
+    pphFinalUmkm: 0,
+  };
+
+  const tr = taxReport || defaultReport;
+  const isVatUnderpaid = tr.netVatPayable >= 0;
 
   return (
     <div className="p-4 space-y-4">
@@ -39,7 +50,7 @@ export const TaxReportView: React.FC<TaxReportViewProps> = ({
             <span className="text-xs text-slate-500">{periodLabel}</span>
           </div>
           <div className={`text-xl font-black ${isVatUnderpaid ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-            {formatRupiah(Math.abs(taxReport.netVatPayable))}
+            {formatRupiah(Math.abs(tr.netVatPayable))}
           </div>
           <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
             Status: <strong>{isVatUnderpaid ? 'PPN Kurang Bayar (Wajib Setor Kas Negara)' : 'PPN Lebih Bayar (Bisa Dikompensasikan)'}</strong>
@@ -56,10 +67,10 @@ export const TaxReportView: React.FC<TaxReportViewProps> = ({
             <span className="text-xs text-slate-500">{periodLabel}</span>
           </div>
           <div className="text-xl font-black text-blue-700 dark:text-blue-300">
-            {formatRupiah(taxReport.pphFinalUmkm)}
+            {formatRupiah(tr.pphFinalUmkm)}
           </div>
           <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-            Dihitung dari Omzet Bruto: <strong>{formatRupiah(taxReport.grossRevenue)}</strong>
+            Dihitung dari Omzet Bruto: <strong>{formatRupiah(tr.grossRevenue)}</strong>
           </div>
         </div>
       </div>
@@ -78,11 +89,11 @@ export const TaxReportView: React.FC<TaxReportViewProps> = ({
           <div className="p-4 space-y-2">
             <div className="flex justify-between font-bold text-slate-900 dark:text-white">
               <span>1. DASAR PENGENAAN PAJAK (DPP) PENJUALAN</span>
-              <span>{formatRupiah(taxReport.taxableSales)}</span>
+              <span>{formatRupiah(tr.taxableSales)}</span>
             </div>
             <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold pl-4">
               <span>• PPN Keluaran (Output VAT 11% dipungut dari pembeli)</span>
-              <span>+{formatRupiah(taxReport.outputVat)}</span>
+              <span>+{formatRupiah(tr.outputVat)}</span>
             </div>
           </div>
 
@@ -90,11 +101,11 @@ export const TaxReportView: React.FC<TaxReportViewProps> = ({
           <div className="p-4 space-y-2">
             <div className="flex justify-between font-bold text-slate-900 dark:text-white">
               <span>2. DASAR PENGENAAN PAJAK (DPP) PEMBELIAN / VENDOR</span>
-              <span>{formatRupiah(taxReport.taxablePurchases)}</span>
+              <span>{formatRupiah(tr.taxablePurchases)}</span>
             </div>
             <div className="flex justify-between text-blue-600 dark:text-blue-400 font-semibold pl-4">
               <span>• PPN Masukan (Input VAT 11% dibayarkan ke supplier)</span>
-              <span>-{formatRupiah(taxReport.inputVat)}</span>
+              <span>-{formatRupiah(tr.inputVat)}</span>
             </div>
           </div>
 
@@ -103,17 +114,17 @@ export const TaxReportView: React.FC<TaxReportViewProps> = ({
             <div className="flex justify-between text-slate-700 dark:text-slate-300">
               <span>Selisih PPN (Keluaran - Masukan):</span>
               <span className={`font-bold ${isVatUnderpaid ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {formatRupiah(taxReport.netVatPayable)}
+                {formatRupiah(tr.netVatPayable)}
               </span>
             </div>
             <div className="flex justify-between text-slate-700 dark:text-slate-300">
               <span>Kewajiban PPh Final 0.5% (Pasal 4 ayat 2):</span>
-              <span className="font-bold text-blue-600 dark:text-blue-400">{formatRupiah(taxReport.pphFinalUmkm)}</span>
+              <span className="font-bold text-blue-600 dark:text-blue-400">{formatRupiah(tr.pphFinalUmkm)}</span>
             </div>
             <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between font-extrabold text-sm text-slate-900 dark:text-white">
               <span>TOTAL ESTIMASI KEWAJIBAN SETOR PAJAK BULANAN:</span>
               <span className="text-amber-600 dark:text-amber-400">
-                {formatRupiah(Math.max(0, taxReport.netVatPayable) + taxReport.pphFinalUmkm)}
+                {formatRupiah(Math.max(0, tr.netVatPayable) + tr.pphFinalUmkm)}
               </span>
             </div>
           </div>
