@@ -17,6 +17,7 @@ import { TaxReportView } from './TaxReportView';
 import { RevenueExpenseAnalysisView } from './RevenueExpenseAnalysisView';
 import { BudgetingReportView } from './BudgetingReportView';
 import { ClosingAuditView } from './ClosingAuditView';
+import { FixedAssetsView } from './FixedAssetsView';
 
 import { AddReceivableModal } from './modals/AddReceivableModal';
 import { PayReceivableModal } from './modals/PayReceivableModal';
@@ -24,6 +25,8 @@ import { AddPayableModal } from './modals/AddPayableModal';
 import { PayPayableModal } from './modals/PayPayableModal';
 import { AddJournalEntryModal } from './modals/AddJournalEntryModal';
 import { ClosePeriodModal } from './modals/ClosePeriodModal';
+import { AddFixedAssetModal } from './modals/AddFixedAssetModal';
+import { EditFixedAssetModal } from './modals/EditFixedAssetModal';
 
 import { 
   calculateProfitAndLoss, 
@@ -37,10 +40,10 @@ import {
   exportFinancialReportToExcel, 
   exportFinancialReportToCsv 
 } from '../../utils/financialExport';
-import { Receivable, Payable } from '../../types';
+import { Receivable, Payable, FixedAsset } from '../../types';
 
 export const FinancialModuleContainer: React.FC = () => {
-  const { transactions, accounts, receivables, payables, userProfile } = useApp();
+  const { transactions, accounts, receivables, payables, userProfile, fixedAssets } = useApp();
 
   // Active sub navigation
   const [activeSubTab, setActiveSubTab] = useState<FinancialSubTab>('dashboard');
@@ -67,6 +70,11 @@ export const FinancialModuleContainer: React.FC = () => {
 
   const [isAddJournalOpen, setIsAddJournalOpen] = useState(false);
   const [isClosePeriodOpen, setIsClosePeriodOpen] = useState(false);
+
+  // Fixed Asset modals state
+  const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
+  const [isEditAssetOpen, setIsEditAssetOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<FixedAsset | null>(null);
 
   // Compute active date boundaries
   const { startDate, endDate, periodLabel } = useMemo(() => {
@@ -114,8 +122,8 @@ export const FinancialModuleContainer: React.FC = () => {
   }, [transactions, previousPeriod]);
 
   const balanceSheet = useMemo(() => {
-    return calculateBalanceSheet(accounts, receivables, payables, transactions, endDate);
-  }, [accounts, receivables, payables, transactions, endDate]);
+    return calculateBalanceSheet(accounts, receivables, payables, transactions, endDate, fixedAssets);
+  }, [accounts, receivables, payables, transactions, endDate, fixedAssets]);
 
   const cashFlow = useMemo(() => {
     return calculateCashFlow(transactions, accounts, startDate, endDate);
@@ -233,6 +241,18 @@ export const FinancialModuleContainer: React.FC = () => {
           <BalanceSheetView
             balanceSheet={balanceSheet}
             periodLabel={periodLabel}
+            onOpenAddAssetModal={() => setIsAddAssetOpen(true)}
+            onNavigateToAssets={() => setActiveSubTab('assets')}
+          />
+        )}
+
+        {activeSubTab === 'assets' && (
+          <FixedAssetsView
+            onOpenAddModal={() => setIsAddAssetOpen(true)}
+            onOpenEditModal={(asset) => {
+              setSelectedAsset(asset);
+              setIsEditAssetOpen(true);
+            }}
           />
         )}
 
@@ -278,7 +298,7 @@ export const FinancialModuleContainer: React.FC = () => {
           />
         )}
 
-        {activeSubTab === 'bank' && (
+        {(activeSubTab === 'bank' || activeSubTab === 'banking') && (
           <BankingReconView />
         )}
 
@@ -296,7 +316,7 @@ export const FinancialModuleContainer: React.FC = () => {
           />
         )}
 
-        {activeSubTab === 'budget' && (
+        {(activeSubTab === 'budget' || activeSubTab === 'budgeting') && (
           <BudgetingReportView />
         )}
 
@@ -345,6 +365,21 @@ export const FinancialModuleContainer: React.FC = () => {
         isOpen={isClosePeriodOpen}
         onClose={() => setIsClosePeriodOpen(false)}
         currentNetIncome={pnlCurrent?.netProfit ?? 0}
+      />
+
+      {/* Fixed Asset Modals */}
+      <AddFixedAssetModal
+        isOpen={isAddAssetOpen}
+        onClose={() => setIsAddAssetOpen(false)}
+      />
+
+      <EditFixedAssetModal
+        isOpen={isEditAssetOpen}
+        onClose={() => {
+          setIsEditAssetOpen(false);
+          setSelectedAsset(null);
+        }}
+        asset={selectedAsset}
       />
     </div>
   );

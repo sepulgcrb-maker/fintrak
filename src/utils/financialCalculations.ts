@@ -1,4 +1,4 @@
-import { Transaction, Account, Receivable, Payable, JournalEntry, CategoryBudget } from '../types';
+import { Transaction, Account, Receivable, Payable, JournalEntry, CategoryBudget, FixedAsset } from '../types';
 
 export interface DateFilterRange {
   startDate: string; // YYYY-MM-DD
@@ -202,6 +202,10 @@ export interface BalanceSheetReport {
   fixedAssets: {
     equipment: number;
     vehicles: number;
+    machinery?: number;
+    furniture?: number;
+    building?: number;
+    other?: number;
     accumulatedDepreciation: number;
     total: number;
   };
@@ -227,7 +231,8 @@ export const calculateBalanceSheet = (
   receivables: Receivable[],
   payables: Payable[],
   transactions: Transaction[],
-  asOfDate: string
+  asOfDate: string,
+  fixedAssets?: FixedAsset[]
 ): BalanceSheetReport => {
   // Cash & Bank
   const cashAndBank = accounts.reduce((sum, a) => sum + (a.isActive ? a.balance : 0), 0);
@@ -243,11 +248,36 @@ export const calculateBalanceSheet = (
 
   const currentAssetsTotal = cashAndBank + accountsReceivable + suppliesInventory;
 
-  // Fixed Assets (Equipment, Vehicles)
-  const equipment = 18000000;
-  const vehicles = 25000000;
-  const accumulatedDepreciation = -6500000;
-  const fixedAssetsTotal = equipment + vehicles + accumulatedDepreciation;
+  // Fixed Assets (Equipment, Vehicles, Machinery, Furniture, etc.)
+  let equipment = 0;
+  let vehicles = 0;
+  let machinery = 0;
+  let furniture = 0;
+  let building = 0;
+  let otherAssets = 0;
+  let accumulatedDepreciation = 0;
+
+  if (fixedAssets && fixedAssets.length > 0) {
+    fixedAssets.filter(a => a.status === 'active').forEach(a => {
+      const cost = a.acquisitionCost || 0;
+      if (a.category === 'equipment') equipment += cost;
+      else if (a.category === 'vehicles') vehicles += cost;
+      else if (a.category === 'machinery') machinery += cost;
+      else if (a.category === 'furniture') furniture += cost;
+      else if (a.category === 'building') building += cost;
+      else otherAssets += cost;
+
+      const dep = calculateAssetDepreciation(a, asOfDate).accumulatedDepreciation;
+      accumulatedDepreciation += dep;
+    });
+  } else {
+    equipment = 18000000;
+    vehicles = 25000000;
+    accumulatedDepreciation = 6500000;
+  }
+
+  const grossFixedAssets = equipment + vehicles + machinery + furniture + building + otherAssets;
+  const fixedAssetsTotal = grossFixedAssets - accumulatedDepreciation;
 
   const totalAssets = currentAssetsTotal + fixedAssetsTotal;
 
@@ -285,7 +315,11 @@ export const calculateBalanceSheet = (
     fixedAssets: {
       equipment,
       vehicles,
-      accumulatedDepreciation,
+      machinery,
+      furniture,
+      building,
+      other: otherAssets,
+      accumulatedDepreciation: -Math.abs(accumulatedDepreciation),
       total: fixedAssetsTotal,
     },
     totalAssets,
@@ -488,4 +522,62 @@ export const getComparativePeriods = (startDate: string, endDate: string): {
     label: `Periode Sebelumnya (${prevStartStr} s/d ${prevEndStr})`,
   };
 };
+
+// 7. FIXED ASSET DEPRECIATION CALCULATOR
+export const calculateAssetDepreciation = (
+  asset: FixedAsset,
+  asOfDate?: string
+): {
+  elapsedMonths: number;
+  monthlyDepreciation: number;
+  annualDepreciation: number;
+  accumulatedDepreciation: number;
+  bookValue: number;
+  isFullyDepreciated: boolean;
+} => {
+  const cost = asset.acquisitionCost || 0;
+  const salvage = asset.salvageValue || 0;
+  const usefulLifeYears = Math.max(1, asset.usefulLifeYears || 4);
+  const totalUsefulMonths = usefulLifeYears * 12;
+
+  const depreciableAmount = Math.max(0, cost - salvage);
+  const monthlyDepreciation = Math.round(depreciableAmount / totalUsefulMonths);
+  const annualDepreciation = monthlyDepreciation * 12;
+
+  // Calculate elapsed months from purchase date to asOfDate (or today)
+  const pDate = new Date(asset.purchaseDate);
+  const targetDate = asOfDate ? new Date(asOfDate) : new Date();
+
+  let elapsedMonths = 0;
+  if (!isNaN(pDate.getTime()) && !isNaN(targetDate.getTime())) {
+    elapsedMonths = Math.max(
+      0,
+      (targetDate.getFullYear() - pDate.getFullYear()) * 12 + (targetDate.getMonth() - pDate.getMonth())
+    );
+  }
+
+  let accumulatedDepreciation = 0;
+  if (asset.depreciationMethod === 'manual' && asset.accumulatedDepreciation !== undefined) {
+    accumulatedDepreciation = Math.min(cost, Math.max(0, asset.accumulatedDepreciation));
+  } else if (asset.accumulatedDepreciation !== undefined && asset.accumulatedDepreciation > 0) {
+    // If manual override was provided, respect it
+    accumulatedDepreciation = Math.min(cost, asset.accumulatedDepreciation);
+  } else {
+    // Straight line calculation
+    accumulatedDepreciation = Math.min(depreciableAmount, elapsedMonths * monthlyDepreciation);
+  }
+
+  const bookValue = Math.max(salvage, cost - accumulatedDepreciation);
+  const isFullyDepreciated = accumulatedDepreciation >= depreciableAmount;
+
+  return {
+    elapsedMonths,
+    monthlyDepreciation,
+    annualDepreciation,
+    accumulatedDepreciation,
+    bookValue,
+    isFullyDepreciated,
+  };
+};
+
 

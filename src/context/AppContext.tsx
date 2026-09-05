@@ -15,7 +15,8 @@ import {
   JournalEntry,
   BankReconciliationItem,
   ClosingPeriod,
-  AuditTrailItem
+  AuditTrailItem,
+  FixedAsset
 } from '../types';
 
 interface AppContextType {
@@ -99,6 +100,11 @@ interface AppContextType {
 
   auditTrails: AuditTrailItem[];
   addAuditLog: (action: string, details: string, module?: string) => void;
+
+  fixedAssets: FixedAsset[];
+  addFixedAsset: (asset: Omit<FixedAsset, 'id'>) => void;
+  updateFixedAsset: (id: string, updates: Partial<FixedAsset>) => void;
+  deleteFixedAsset: (id: string) => void;
 }
 
 const defaultUser: UserProfile = {
@@ -550,6 +556,57 @@ const initialClosingPeriods: ClosingPeriod[] = [
   },
 ];
 
+const initialFixedAssets: FixedAsset[] = [
+  {
+    id: 'asset-1',
+    assetCode: 'AST-2025-001',
+    name: 'MacBook Pro M2 Max 32GB (Workstation Dev)',
+    category: 'equipment',
+    purchaseDate: '2025-01-15',
+    acquisitionCost: 18000000,
+    salvageValue: 2000000,
+    usefulLifeYears: 4,
+    accumulatedDepreciation: 3750000,
+    depreciationMethod: 'straight_line',
+    location: 'Kantor Pusat - Ruang IT',
+    pic: 'Budi Santoso',
+    notes: 'Aset hardware pengembangan sistem dan server',
+    status: 'active',
+  },
+  {
+    id: 'asset-2',
+    assetCode: 'AST-2024-002',
+    name: 'Mobil Operasional Daihatsu Gran Max Box',
+    category: 'vehicles',
+    purchaseDate: '2024-06-10',
+    acquisitionCost: 25000000,
+    salvageValue: 5000000,
+    usefulLifeYears: 8,
+    accumulatedDepreciation: 2750000,
+    depreciationMethod: 'straight_line',
+    location: 'Gudang Logistik Bandung',
+    pic: 'Ahmad Subagyo',
+    notes: 'Armada logistik dan distribusi barang',
+    status: 'active',
+  },
+  {
+    id: 'asset-3',
+    assetCode: 'AST-2025-003',
+    name: 'Mesin Server & Network Switch Cisco Gigabit',
+    category: 'equipment',
+    purchaseDate: '2025-03-20',
+    acquisitionCost: 12500000,
+    salvageValue: 1500000,
+    usefulLifeYears: 4,
+    accumulatedDepreciation: 1800000,
+    depreciationMethod: 'straight_line',
+    location: 'Server Room Utama',
+    pic: 'Tim IT Support',
+    notes: 'Infrastruktur cloud lokal dan backup otomatis',
+    status: 'active',
+  },
+];
+
 const initialAuditTrails: AuditTrailItem[] = [
   {
     id: 'audit-1',
@@ -649,6 +706,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : initialAuditTrails;
   });
 
+  const [fixedAssets, setFixedAssets] = useState<FixedAsset[]>(() => {
+    const saved = localStorage.getItem('fintrack_fixed_assets');
+    return saved ? JSON.parse(saved) : initialFixedAssets;
+  });
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalDefaults, setAddModalDefaults] = useState<{ type: 'income' | 'expense'; status: 'completed' | 'scheduled' }>({
@@ -725,6 +787,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('fintrack_audit_trails', JSON.stringify(auditTrails));
   }, [auditTrails]);
+
+  useEffect(() => {
+    localStorage.setItem('fintrack_fixed_assets', JSON.stringify(fixedAssets));
+  }, [fixedAssets]);
 
   const currentMonthPrefix = todayStr.slice(0, 7);
 
@@ -1279,6 +1345,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const addFixedAsset = (asset: Omit<FixedAsset, 'id'>) => {
+    const id = `asset-${Date.now()}`;
+    const newAsset: FixedAsset = { ...asset, id };
+    setFixedAssets(prev => [newAsset, ...prev]);
+    addAuditLog('TAMBAH ASET TETAP', `Mendaftarkan aset tetap: ${asset.name} (${formatRupiah(asset.acquisitionCost)})`, 'Aset Tetap');
+  };
+
+  const updateFixedAsset = (id: string, updates: Partial<FixedAsset>) => {
+    setFixedAssets(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    const existing = fixedAssets.find(a => a.id === id);
+    addAuditLog('UPDATE ASET TETAP', `Memperbarui data aset tetap: ${existing?.name || id}`, 'Aset Tetap');
+  };
+
+  const deleteFixedAsset = (id: string) => {
+    const existing = fixedAssets.find(a => a.id === id);
+    setFixedAssets(prev => prev.filter(a => a.id !== id));
+    if (existing) {
+      addAuditLog('HAPUS ASET TETAP', `Menghapus aset tetap: ${existing.name}`, 'Aset Tetap');
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1353,6 +1440,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         togglePeriodLock,
         auditTrails,
         addAuditLog,
+        fixedAssets,
+        addFixedAsset,
+        updateFixedAsset,
+        deleteFixedAsset,
       }}
     >
       {children}

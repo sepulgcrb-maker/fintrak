@@ -12,23 +12,12 @@ import {
   Receipt, 
   PieChart, 
   Target, 
-  Lock
+  Lock,
+  Landmark
 } from 'lucide-react';
+import { FinancialSubTab } from '../../types';
 
-export type FinancialSubTab = 
-  | 'dashboard'
-  | 'pnl'
-  | 'balance'
-  | 'cashflow'
-  | 'ledger'
-  | 'journal'
-  | 'receivables'
-  | 'payables'
-  | 'banking'
-  | 'tax'
-  | 'analysis'
-  | 'budgeting'
-  | 'closing';
+export type { FinancialSubTab };
 
 interface FinancialSubNavProps {
   activeSubTab?: FinancialSubTab;
@@ -56,6 +45,7 @@ export const FinancialSubNav: React.FC<FinancialSubNavProps> = ({
     { id: 'dashboard' as FinancialSubTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'pnl' as FinancialSubTab, label: 'Laba Rugi', icon: TrendingUp },
     { id: 'balance' as FinancialSubTab, label: 'Neraca', icon: Scale },
+    { id: 'assets' as FinancialSubTab, label: 'Aset Tetap', icon: Landmark },
     { id: 'cashflow' as FinancialSubTab, label: 'Arus Kas', icon: Wallet },
     { id: 'ledger' as FinancialSubTab, label: 'Buku Besar', icon: BookOpen },
     { id: 'journal' as FinancialSubTab, label: 'Jurnal Umum', icon: FileSpreadsheet },

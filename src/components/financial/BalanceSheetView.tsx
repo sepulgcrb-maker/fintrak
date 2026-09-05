@@ -7,7 +7,8 @@ import {
   Layers, 
   ShieldCheck, 
   Wallet, 
-  Coins 
+  Coins,
+  Plus
 } from 'lucide-react';
 import { BalanceSheetReport } from '../../utils/financialCalculations';
 import { formatRupiah } from '../../utils/formatters';
@@ -16,12 +17,16 @@ export interface BalanceSheetViewProps {
   balanceSheet?: BalanceSheetReport;
   asOfDateLabel?: string;
   periodLabel?: string;
+  onOpenAddAssetModal?: () => void;
+  onNavigateToAssets?: () => void;
 }
 
 export const BalanceSheetView: React.FC<BalanceSheetViewProps> = ({
   balanceSheet,
   asOfDateLabel,
   periodLabel,
+  onOpenAddAssetModal,
+  onNavigateToAssets,
 }) => {
   const displayDate = asOfDateLabel || periodLabel || 'Per Hari Ini';
 
@@ -122,15 +127,39 @@ export const BalanceSheetView: React.FC<BalanceSheetViewProps> = ({
 
               {/* ASET TETAP */}
               <div className="p-3.5 space-y-2">
-                <div className="flex justify-between font-bold text-slate-800 dark:text-white text-sm">
-                  <span>ASET TETAP (FIXED ASSETS)</span>
-                  <span className="text-emerald-600 dark:text-emerald-400">
-                    {formatRupiah(bs.fixedAssets.total)}
-                  </span>
+                <div className="flex items-center justify-between font-bold text-slate-800 dark:text-white text-sm">
+                  <div className="flex items-center gap-2">
+                    <span>ASET TETAP (FIXED ASSETS)</span>
+                    {onOpenAddAssetModal && (
+                      <button
+                        type="button"
+                        onClick={onOpenAddAssetModal}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800 transition-colors cursor-pointer"
+                        title="Input Manual Aset Tetap Baru"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>+ Input Aset Tetap</span>
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {onNavigateToAssets && (
+                      <button
+                        type="button"
+                        onClick={onNavigateToAssets}
+                        className="text-[11px] font-medium text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer underline"
+                      >
+                        Kelola Detail
+                      </button>
+                    )}
+                    <span className="text-emerald-600 dark:text-emerald-400">
+                      {formatRupiah(bs.fixedAssets.total)}
+                    </span>
+                  </div>
                 </div>
                 <div className="pl-3 space-y-1.5 text-slate-600 dark:text-slate-400">
                   <div className="flex justify-between">
-                    <span>• Peralatan Usaha & Komputer</span>
+                    <span>• Peralatan Usaha & Komputer (IT)</span>
                     <span className="font-semibold text-slate-900 dark:text-white">
                       {formatRupiah(bs.fixedAssets.equipment)}
                     </span>
@@ -141,6 +170,38 @@ export const BalanceSheetView: React.FC<BalanceSheetViewProps> = ({
                       {formatRupiah(bs.fixedAssets.vehicles)}
                     </span>
                   </div>
+                  {bs.fixedAssets.machinery !== undefined && bs.fixedAssets.machinery > 0 && (
+                    <div className="flex justify-between">
+                      <span>• Mesin & Alat Produksi</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        {formatRupiah(bs.fixedAssets.machinery)}
+                      </span>
+                    </div>
+                  )}
+                  {bs.fixedAssets.furniture !== undefined && bs.fixedAssets.furniture > 0 && (
+                    <div className="flex justify-between">
+                      <span>• Furnitur & Mebel Kantor</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        {formatRupiah(bs.fixedAssets.furniture)}
+                      </span>
+                    </div>
+                  )}
+                  {bs.fixedAssets.building !== undefined && bs.fixedAssets.building > 0 && (
+                    <div className="flex justify-between">
+                      <span>• Gedung & Bangunan Usaha</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        {formatRupiah(bs.fixedAssets.building)}
+                      </span>
+                    </div>
+                  )}
+                  {bs.fixedAssets.other !== undefined && bs.fixedAssets.other > 0 && (
+                    <div className="flex justify-between">
+                      <span>• Aset Tetap Lainnya</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        {formatRupiah(bs.fixedAssets.other)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-rose-500">
                     <span>• Akumulasi Penyusutan (Depresiasi)</span>
                     <span className="font-semibold">

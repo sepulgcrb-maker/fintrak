@@ -337,7 +337,17 @@ export const FinancialDashboardView: React.FC<FinancialDashboardViewProps> = ({
         <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
           Akses Cepat Modul Pembukuan
         </h4>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <button
+            onClick={() => navigate('assets')}
+            className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 text-left transition-all group cursor-pointer"
+          >
+            <div className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+              🏢 Aset Tetap
+            </div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">Penyusutan & Nilai Buku</div>
+          </button>
+
           <button
             onClick={() => navigate('ledger')}
             className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 text-left transition-all group cursor-pointer"

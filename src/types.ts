@@ -125,16 +125,38 @@ export type FinancialSubTab =
   | 'dashboard' 
   | 'pnl' 
   | 'balance' 
+  | 'assets'
   | 'cashflow' 
   | 'ledger' 
   | 'journal' 
   | 'receivables' 
   | 'payables' 
   | 'bank' 
+  | 'banking'
   | 'tax' 
   | 'analysis' 
   | 'budget' 
+  | 'budgeting'
   | 'closing';
+
+export type FixedAssetCategory = 'equipment' | 'vehicles' | 'machinery' | 'furniture' | 'building' | 'other';
+
+export interface FixedAsset {
+  id: string;
+  assetCode: string;
+  name: string;
+  category: FixedAssetCategory;
+  purchaseDate: string; // YYYY-MM-DD
+  acquisitionCost: number;
+  salvageValue?: number;
+  usefulLifeYears: number;
+  accumulatedDepreciation?: number;
+  depreciationMethod?: 'straight_line' | 'manual';
+  location?: string;
+  pic?: string;
+  notes?: string;
+  status: 'active' | 'disposed' | 'maintenance';
+}
 
 export interface Receivable {
   id: string;
